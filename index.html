@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PC Software Hub - 1-Click Git Branch Clone & Download</title>
-  <meta name="description" content="A multi-software GitHub repository portal. 1-click clone directly to any software branch or download ZIP.">
+  <title>PC Software Hub - 1-Click Git Branch Clone & Auto-Discovery</title>
+  <meta name="description" content="A multi-software GitHub repository portal with automatic branch discovery. 1-click clone directly to any software branch or download ZIP.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
@@ -23,11 +23,17 @@
         <div class="logo-icon">💻</div>
         <div class="brand-text">
           <h1>PC Software Hub</h1>
-          <span class="badge-status">Branch Repository</span>
+          <div class="live-sync-indicator" id="sync-indicator" title="Connected to GitHub live branches">
+            <span class="pulse-dot"></span>
+            <span class="sync-text" id="sync-status-text">Live Auto-Sync Active</span>
+          </div>
         </div>
       </div>
 
       <nav class="nav-links">
+        <button type="button" class="btn btn-secondary btn-sm" id="btn-sync-branches" title="Fetch newest branches directly from GitHub">
+          <span class="icon">🔄</span> Sync Branches
+        </button>
         <button type="button" class="btn btn-secondary btn-sm" id="btn-open-guide">
           <span class="icon">📖</span> How It Works
         </button>
@@ -35,7 +41,7 @@
           <svg class="git-icon" viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
             <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
           </svg>
-          GitHub Repo
+          GitHub
         </a>
       </nav>
     </div>
@@ -44,26 +50,26 @@
   <!-- Hero Section -->
   <section class="hero">
     <div class="container hero-container">
-      <div class="hero-badge">⚡ Instant 1-Click Branch Clone</div>
-      <h2 class="hero-title">Ek Repo, Prottek Software er jonno Separate Branch!</h2>
+      <div class="hero-badge">⚡ Auto-Discovery Branch Portal</div>
+      <h2 class="hero-title">Notun Branch Push Korlei Auto Ekhane Chole Asbe!</h2>
       <p class="hero-desc">
-        Prottek software ekta specific branch e isolated ache. 
-        Apni just <strong>"Copy Clone"</strong> click korlei command copy hoye jabe — terminal e run korlei oi software er branch e direct clone hoye jabe! Athoba 1-click e <strong>Direct ZIP</strong> download korun.
+        Apni Git e jekono notun branch push korlei live website ta <strong>GitHub API theke auto branch detect</strong> kore nibe.
+        Manual kono HTML ba JS edit korte hobe na! Just <strong>"Copy Clone"</strong> click korlei command copy hoye jabe.
       </p>
 
       <!-- Quick Feature highlights -->
       <div class="hero-stats">
         <div class="stat-pill">
           <span class="stat-icon">🎯</span>
-          <span class="stat-text"><strong id="software-count">5</strong> Softwares</span>
+          <span class="stat-text"><strong id="software-count">5</strong> Softwares Detected</span>
         </div>
         <div class="stat-pill">
-          <span class="stat-icon">🌿</span>
-          <span class="stat-text">Isolated Single-Branch Clone</span>
+          <span class="stat-icon">🔄</span>
+          <span class="stat-text">Instant GitHub Branch Auto-Sync</span>
         </div>
         <div class="stat-pill">
           <span class="stat-icon">📦</span>
-          <span class="stat-text">Direct ZIP Download</span>
+          <span class="stat-text">Single-Branch Clone & Direct ZIP</span>
         </div>
       </div>
     </div>
@@ -119,8 +125,15 @@
   <main class="main-content">
     <div class="container">
       <div class="section-header">
-        <h3 class="section-title">Available PC Software</h3>
-        <span class="results-count" id="results-count">Showing 5 software</span>
+        <div>
+          <h3 class="section-title">Available PC Software</h3>
+          <span class="results-count" id="results-count">Scanning GitHub branches...</span>
+        </div>
+        <div class="header-actions">
+          <button type="button" class="btn btn-secondary btn-sm" id="btn-refresh-grid" title="Sync now">
+            <span class="icon">🔄</span> Reload List
+          </button>
+        </div>
       </div>
 
       <div class="software-grid" id="software-grid" role="region" aria-live="polite">
@@ -141,24 +154,24 @@
     <div class="container">
       <div class="instructions-card">
         <div class="instructions-header">
-          <div class="step-num">💡</div>
+          <div class="step-num">🚀</div>
           <div>
-            <h4>Kivabe Use Korben? (How It Works)</h4>
-            <p>Jekono PC te software ta nite matro 2 ti simple step:</p>
+            <h4>Kivabe Notun Software Push Korben? (Zero-Code Auto Sync)</h4>
+            <p>Git e branch push korlei auto ei page e asbe, kono code likhte hobe na:</p>
           </div>
         </div>
         <div class="steps-grid">
           <div class="step-card">
-            <span class="step-badge">Option 1</span>
-            <h5>1-Click Copy Git Clone (Recommended)</h5>
-            <p>Cards er <strong>"⚡ Copy Clone"</strong> button e click korun. Tarpor apnar PC er <strong>Command Prompt / PowerShell / Terminal</strong> open kore <kbd>Ctrl</kbd> + <kbd>V</kbd> chepe Enter din!</p>
-            <div class="code-pill">git clone -b &lt;branch&gt; --single-branch &lt;repo&gt;</div>
+            <span class="step-badge">Automatic (Script)</span>
+            <h5>1-Click Batch Script</h5>
+            <p>ফোল্ডারে থাকা <code>add-software.bat</code> এ ডাবল ক্লিক করে ব্রাঞ্চের নাম দিন (যেমন: <code>obs-studio</code>)। ফাইল রেখে স্ক্রিপ্ট থেকেই Push দিন, সঙ্গে সঙ্গে লাইভ সাইটে চলে আসবে!</p>
+            <div class="code-pill">add-software.bat (Double click)</div>
           </div>
           <div class="step-card">
-            <span class="step-badge">Option 2</span>
-            <h5>Direct ZIP Download (No Git Needed)</h5>
-            <p>Jodi PC te Git install na thake, tobe <strong>"📥 Download ZIP"</strong> button e click korun. Shora-shori GitHub theke oi branch er sob files zip akare download hoye jabe!</p>
-            <div class="code-pill">Instant Browser Download</div>
+            <span class="step-badge">Manual (Git CLI)</span>
+            <h5>Git Terminal Command</h5>
+            <p>যেকোনো সময় নতুন ব্রাঞ্চ তৈরি করে পুশ করুন: <code>git checkout --orphan my-software && git add . && git commit -m "Add" && git push -u origin my-software</code></p>
+            <div class="code-pill">git push -u origin my-software</div>
           </div>
         </div>
       </div>
@@ -180,41 +193,35 @@
   <!-- Native Accessible Modal for Instructions -->
   <dialog id="guide-modal" aria-labelledby="modal-title">
     <div class="modal-header">
-      <h3 id="modal-title">📖 Repository Guide & Branch Architecture</h3>
+      <h3 id="modal-title">📖 Auto Branch Discovery Guide</h3>
       <button type="button" class="btn-close" id="btn-close-modal" aria-label="Close dialog">✕</button>
     </div>
     <div class="modal-body">
-      <h4>🌱 Keno Branch-Based System?</h4>
+      <h4>⚡ Kivabe Auto-Sync Kaaj Kore?</h4>
       <p>
-        Ekta single repository te prottek software ke alada alada branch e rakhar subidha holo:
+        এই লাইভ ওয়েবসাইটটি সরাসরি <strong>GitHub REST API</strong> এবং <strong>GitHub Actions</strong> এর সাথে কানেক্টেড।
       </p>
       <ul>
-        <li><strong>Zero Bloat:</strong> <code>--single-branch</code> use korle shudhu matro sei software er files download hobe, baki software gulo download hoye hard disk er space nosto korbe na.</li>
-        <li><strong>Auto Checkout:</strong> Clone hoyei auto sei branch e active hoye thakbe, manual <code>git checkout</code> korar dorkar hobe na.</li>
-        <li><strong>Easy Updates:</strong> Shob software ekta repository te organized thakbe!</li>
+        <li><strong>Automatic Branch Detection:</strong> আপনি যখনই <code>git push origin &lt;notun-branch&gt;</code> করবেন, এই পেজে রিফ্রেশ দেওয়ার সাথে সাথেই GitHub থেকে ব্রাঞ্চটির নাম চলে আসবে।</li>
+        <li><strong>Custom software.json (Optional):</strong> আপনি চাইলে ব্রাঞ্চের ভেতর একটি <code>software.json</code> ফাইল রাখতে পারেন সুন্দর নাম ও ডেসক্রিপশনের জন্য (যা <code>add-software.bat</code> নিজে থেকেই বানিয়ে দেয়)। ফাইল না থাকলেও অটোমেটিক ফরম্যাট হয়ে সুন্দর কার্ড তৈরি হবে!</li>
+        <li><strong>Zero Maintenance:</strong> আপনার আর কখনো <code>index.html</code> এ এসে হাত দিতে হবে না।</li>
       </ul>
 
       <hr class="modal-divider">
 
-      <h4>➕ Notun Software Branch add korben kivabe?</h4>
-      <p>Jodi apnar 6th ba notun kono software branch add korte hoy:</p>
-      <pre><code># 1. Notun branch toiri korun
-git checkout --orphan my-new-software
+      <h4>➕ Notun Software Branch add korar command:</h4>
+      <pre><code># 1. Notun orphan branch toiri korun
+git checkout --orphan obs-studio
 
-# 2. Purano files muche notun software er files copy korun
+# 2. Files clear korun
 git rm -rf .
-# (Apnar software files ekhane paste korun)
 
-# 3. Commit ebong Push korun
+# 3. Software er files ekhane paste kore commit o push din
 git add .
-git commit -m "Add my-new-software"
-git push origin my-new-software
+git commit -m "Add OBS Studio"
+git push -u origin obs-studio
 
-# 4. software-data.js e notun entry add korun ebong main branch push korun!</code></pre>
-
-      <p class="tip-box">
-        💡 <em>Tip: Repository root e thaka <code>add-software.bat</code> file run koreo automatic branch create korte parben!</em>
-      </p>
+# 4. Live website e reload din — magic! Chole asbe!</code></pre>
     </div>
     <div class="modal-footer">
       <button type="button" class="btn btn-primary" id="btn-modal-ok">Bujhte Perechi (Got It)</button>

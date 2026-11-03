@@ -1,5 +1,6 @@
 /**
- * PC Software Hub - Interactive Client Logic
+ * PC Software Hub - Auto-Discovery & Interactive Client Logic
+ * Automatically detects and renders branches pushed to GitHub repository
  */
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -19,15 +20,223 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnCloseModal = document.getElementById("btn-close-modal");
   const btnModalOk = document.getElementById("btn-modal-ok");
   const softwareCountEl = document.getElementById("software-count");
+  const syncIndicator = document.getElementById("sync-indicator");
+  const syncStatusText = document.getElementById("sync-status-text");
+  const btnSyncBranches = document.getElementById("btn-sync-branches");
+  const btnRefreshGrid = document.getElementById("btn-refresh-grid");
 
   // State
+  let softwareItems = [];
   let currentSearch = "";
   let currentCategory = "all";
   let currentCloneMode = "single"; // 'single' | 'cd' | 'standard'
   let toastTimeout = null;
 
-  if (softwareCountEl && Array.isArray(SOFTWARE_LIST)) {
-    softwareCountEl.textContent = SOFTWARE_LIST.length;
+  // Local Storage Cache Keys
+  const CACHE_KEY = "pc_software_cached_branches_v2";
+
+  // Helper: Format branch name into clean display title
+  function formatBranchTitle(branch) {
+    // Known acronyms to capitalize
+    const acronyms = ["vlc", "idm", "ide", "gui", "cli", "api", "obs", "sdk", "zip", "rar", "7z", "os", "pc"];
+
+    return branch
+      .replace(/[-_]+/g, " ")
+      .split(" ")
+      .map(word => {
+        const lower = word.toLowerCase();
+        if (acronyms.includes(lower)) return lower.toUpperCase();
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      })
+      .join(" ");
+  }
+
+  // Helper: Auto-detect category and icon from branch name
+  function autoDetectMetadata(branch) {
+    const lower = branch.toLowerCase();
+
+    // Media
+    if (/vlc|player|media|video|audio|music|sound|mp3|mp4|stream|obs|camera|screen/i.test(lower)) {
+      return {
+        category: "media",
+        categoryLabel: "Media Player",
+        icon: "🎬"
+      };
+    }
+
+    // Development
+    if (/code|git|dev|ide|editor|studio|terminal|cmd|python|node|compiler|cpp|java/i.test(lower)) {
+      return {
+        category: "development",
+        categoryLabel: "Development",
+        icon: "💻"
+      };
+    }
+
+    // Utilities & Archivers
+    if (/zip|rar|7z|tar|compress|archiver/i.test(lower)) {
+      return {
+        category: "utilities",
+        categoryLabel: "Archiver",
+        icon: "📦"
+      };
+    }
+
+    if (/download|idm|accelerator|torrent|fetch/i.test(lower)) {
+      return {
+        category: "utilities",
+        categoryLabel: "Downloader",
+        icon: "⚡"
+      };
+    }
+
+    if (/tool|util|script|cleaner|driver|system|benchmark|manager/i.test(lower)) {
+      return {
+        category: "utilities",
+        categoryLabel: "Utilities",
+        icon: "🛠️"
+      };
+    }
+
+    // Default
+    return {
+      category: "utilities",
+      categoryLabel: "Utilities",
+      icon: "🚀"
+    };
+  }
+
+  // Fetch branches from GitHub API (Live) with fallback to branches.json and localStorage
+  async function loadBranches(forceRefresh = false) {
+    setSyncStatus(true, "Scanning GitHub branches...");
+
+    let branchNames = [];
+
+    // 1. Try Live GitHub REST API
+    try {
+      const response = await fetch(REPO_CONFIG.apiBranchesUrl, {
+        headers: { Accept: "application/vnd.github.v3+json" }
+      });
+
+      if (response.ok) {
+        const apiData = await response.json();
+        if (Array.isArray(apiData)) {
+          branchNames = apiData
+            .map(b => b.name)
+            .filter(name => !SYSTEM_BRANCHES.includes(name));
+
+          // Save to local cache
+          localStorage.setItem(CACHE_KEY, JSON.stringify(branchNames));
+          setSyncStatus(false, "Live Auto-Sync Active");
+        }
+      } else {
+        throw new Error(`GitHub API Status: ${response.status}`);
+      }
+    } catch (apiErr) {
+      console.warn("GitHub live API unavailable (possible rate limit), falling back:", apiErr);
+
+      // 2. Try branches.json static fallback
+      try {
+        const jsonResp = await fetch("branches.json?t=" + Date.now());
+        if (jsonResp.ok) {
+          const jsonData = await jsonResp.json();
+          if (Array.isArray(jsonData) && jsonData.length > 0) {
+            branchNames = jsonData.filter(name => !SYSTEM_BRANCHES.includes(name));
+            setSyncStatus(false, "Static branches.json Sync");
+          }
+        }
+      } catch (jsonErr) {
+        console.warn("branches.json unavailable:", jsonErr);
+      }
+
+      // 3. Try localStorage cache
+      if (branchNames.length === 0) {
+        const cached = localStorage.getItem(CACHE_KEY);
+        if (cached) {
+          try {
+            branchNames = JSON.parse(cached);
+            setSyncStatus(false, "Cached Sync");
+          } catch (e) {}
+        }
+      }
+
+      // 4. Default fallback: Curated software list
+      if (branchNames.length === 0 && typeof CURATED_SOFTWARE !== "undefined") {
+        branchNames = Object.keys(CURATED_SOFTWARE);
+        setSyncStatus(false, "Default Catalog");
+      }
+    }
+
+    // Build items from branchNames
+    softwareItems = await buildSoftwareItems(branchNames);
+
+    if (softwareCountEl) {
+      softwareCountEl.textContent = softwareItems.length;
+    }
+
+    renderSoftwareCards();
+
+    if (forceRefresh) {
+      showToast(`Synced with GitHub! Found ${softwareItems.length} software branches.`);
+    }
+  }
+
+  // Set Sync indicator status in header
+  function setSyncStatus(isSyncing, text) {
+    if (syncIndicator) {
+      if (isSyncing) syncIndicator.classList.add("syncing");
+      else syncIndicator.classList.remove("syncing");
+    }
+    if (syncStatusText) {
+      syncStatusText.textContent = text;
+    }
+  }
+
+  // Build software card models for all detected branches
+  async function buildSoftwareItems(branchNames) {
+    const items = [];
+
+    for (const branch of branchNames) {
+      // Check if we have curated metadata
+      if (typeof CURATED_SOFTWARE !== "undefined" && CURATED_SOFTWARE[branch]) {
+        const curated = CURATED_SOFTWARE[branch];
+        items.push({
+          id: branch,
+          branch: branch,
+          name: curated.name || formatBranchTitle(branch),
+          category: curated.category || "utilities",
+          categoryLabel: curated.categoryLabel || "Utilities",
+          version: curated.version || "Latest",
+          icon: curated.icon || "💻",
+          description: curated.description || `Portable standalone version of ${curated.name || branch}.`,
+          tags: curated.tags || ["Portable", "Windows"],
+          folderName: curated.folderName || branch
+        });
+      } else {
+        // Auto-generate metadata dynamically from branch name
+        const detected = autoDetectMetadata(branch);
+        const title = formatBranchTitle(branch);
+        const tags = branch
+          .split(/[-_]+/)
+          .filter(t => t.length > 1)
+          .map(t => t.charAt(0).toUpperCase() + t.slice(1));
+
+        items.push({
+          id: branch,
+          branch: branch,
+          name: title,
+          category: detected.category,
+          categoryLabel: detected.categoryLabel,
+          version: "Latest",
+          icon: detected.icon,
+          description: `Portable standalone version of ${title}. Ready to clone and use.`,
+          tags: tags.length > 0 ? tags : ["Portable", "Windows"],
+          folderName: branch
+        });
+      }
+    }
+
+    return items;
   }
 
   // Generate Git Clone command string based on current mode
@@ -61,7 +270,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function renderSoftwareCards() {
     softwareGrid.innerHTML = "";
 
-    const filtered = SOFTWARE_LIST.filter(item => {
+    const filtered = softwareItems.filter(item => {
       // Category match
       const categoryMatch = currentCategory === "all" || item.category === currentCategory;
 
@@ -76,7 +285,7 @@ document.addEventListener("DOMContentLoaded", () => {
       return categoryMatch && searchMatch;
     });
 
-    resultsCount.textContent = `Showing ${filtered.length} software`;
+    resultsCount.textContent = `Showing ${filtered.length} of ${softwareItems.length} software`;
 
     if (filtered.length === 0) {
       noResults.hidden = false;
@@ -309,6 +518,26 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   }
 
-  // Initial render
-  renderSoftwareCards();
+  // Sync branches manually
+  function triggerManualSync(button) {
+    if (button) {
+      const icon = button.querySelector(".icon");
+      if (icon) icon.classList.add("spin-icon");
+      setTimeout(() => {
+        if (icon) icon.classList.remove("spin-icon");
+      }, 1200);
+    }
+    loadBranches(true);
+  }
+
+  if (btnSyncBranches) {
+    btnSyncBranches.addEventListener("click", () => triggerManualSync(btnSyncBranches));
+  }
+
+  if (btnRefreshGrid) {
+    btnRefreshGrid.addEventListener("click", () => triggerManualSync(btnRefreshGrid));
+  }
+
+  // Initial load
+  loadBranches(false);
 });

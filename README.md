@@ -1,76 +1,76 @@
 # 💻 PC Software Hub
 
-> **Single GitHub Repo • Branch-Isolated Portable Softwares • 1-Click Clone & Direct Download**
+> **Single GitHub Repo • Branch-Isolated Portable Softwares • Auto-Discovery & 1-Click Clone**
 
 🌐 **Live GitHub Pages Portal:** [https://rayhanalshorif133.github.io/PC-Software/](https://rayhanalshorif133.github.io/PC-Software/)
 
 ---
 
+## ⚡ Auto Branch Discovery (অটোমেটিক ব্রাঞ্চ ডিটেকশন)
+
+এই প্রজেক্টে **সম্পূর্ণ অটোমেশন** সেটআপ করা হয়েছে:
+- আপনি যখনই গিটহাবে কোনো নতুন ব্রাঞ্চ বানিয়ে পুশ করবেন (`git push origin <branch-name>`), **লাইভ `index.html` পেজে সেটি স্বয়ংক্রিয়ভাবে চলে আসবে!**
+- কোনো কোড বা HTML/JS ফাইল ম্যানুয়ালি এডিট করার প্রয়োজন নেই।
+- পেজটি সরাসরি **GitHub REST API** ও **GitHub Actions** এর মাধ্যমে লাইভ ব্রাঞ্চ লিস্ট স্ক্যান করে রেন্ডার করে।
+
+---
+
 ## 🚀 How It Works (কিভাবে কাজ করে)
 
-এই রিপোজিটরিতে একাধিক পিসি সফটওয়্যার আলাদা আলাদা **Git Branch**-এ রাখা হয়েছে। লাইভ ওয়েবসাইটে গিয়ে যে কোনো সফটওয়্যার এর পাশে **"⚡ Copy Clone"** বাটনে এক ক্লিক করলেই কমান্ড কপি হয়ে যাবে। টার্মিনালে রান করলেই সরাসরি সেই সফটওয়্যারের ব্রাঞ্চ ক্লোন হয়ে যাবে!
-
-এছাড়া ব্রাউজার থেকে সরাসরি **"📥 Download ZIP"** এ ক্লিক করে কোনো গিট ছাড়াই সফটওয়্যার ডাউনলোড করা যাবে।
-
-### ⚡ 1-Click Git Clone Commands (প্রত্যেক ব্রাঞ্চের জন্য)
-
-| Software Name | Branch Name | Direct Git Clone Command | Direct ZIP |
-| :--- | :--- | :--- | :--- |
-| **IDM Downloader** | `idm-downloader` | `git clone -b idm-downloader --single-branch https://github.com/rayhanalshorif133/PC-Software.git IDM-Portable` | [Download ZIP](https://github.com/rayhanalshorif133/PC-Software/archive/refs/heads/idm-downloader.zip) |
-| **VLC Media Player** | `vlc-media-player` | `git clone -b vlc-media-player --single-branch https://github.com/rayhanalshorif133/PC-Software.git VLC-Portable` | [Download ZIP](https://github.com/rayhanalshorif133/PC-Software/archive/refs/heads/vlc-media-player.zip) |
-| **VS Code Portable** | `vscode-portable` | `git clone -b vscode-portable --single-branch https://github.com/rayhanalshorif133/PC-Software.git VSCode-Portable` | [Download ZIP](https://github.com/rayhanalshorif133/PC-Software/archive/refs/heads/vscode-portable.zip) |
-| **7-Zip Archiver** | `7zip-archiver` | `git clone -b 7zip-archiver --single-branch https://github.com/rayhanalshorif133/PC-Software.git 7Zip-Utility` | [Download ZIP](https://github.com/rayhanalshorif133/PC-Software/archive/refs/heads/7zip-archiver.zip) |
-| **Git Quick Tools** | `git-quick-tools` | `git clone -b git-quick-tools --single-branch https://github.com/rayhanalshorif133/PC-Software.git Git-QuickTools` | [Download ZIP](https://github.com/rayhanalshorif133/PC-Software/archive/refs/heads/git-quick-tools.zip) |
+1. **1-Click Clone & Switch:** কার্ডের **"⚡ Copy Clone"** বাটনে এক ক্লিক করলেই কমান্ড কপি হবে। টার্মিনালে এন্টার দিলেই শুধু ওই সফটওয়্যারটির ব্রাঞ্চ ক্লোন হয়ে যাবে।
+2. **Direct ZIP:** গিট ছাড়া সরাসরি ব্রাউজারে জিপ ফাইল ডাউনলোড করা যায়।
+3. **Auto Sync:** নতুন ব্রাঞ্চ পুশ করার পর ওয়েবসাইটে ঢুকলেই তা স্বয়ংক্রিয়ভাবে কার্ড আকারে যোগ হয়ে যায়।
 
 ---
 
-## 🛠️ GitHub Pages চালু করার নিয়ম (Enable GitHub Pages)
+## ➕ নতুন কোনো সফটওয়্যার যোগ করার নিয়ম (মাত্র ২টি স্টেপ):
 
-1. এই রিপোজিটরিটি গিটহাবে পুশ করার পর আপনার রিপোজিটরি লিংকে যান:  
-   `https://github.com/rayhanalshorif133/PC-Software`
-2. উপরে **Settings** ট্যাবে ক্লিক করুন।
-3. বাম পাশের মেন্যু থেকে **Pages** এ ক্লিক করুন।
-4. **Build and deployment** সেকশনে:
-   - Source: **Deploy from a branch**
-   - Branch: **`main`** (অথবা `gh-pages`), Folder: **`/ (root)`**
-5. **Save** বাটনে ক্লিক করুন।
-6. ১-২ মিনিট পর আপনার ওয়েবসাইট লাইভ হয়ে যাবে:  
-   👉 **`https://rayhanalshorif133.github.io/PC-Software/`**
+### পদ্ধতি ১: অটোমেটিক উইন্ডোজ স্ক্রিপ্ট (সবচেয়ে সহজ)
+1. ফোল্ডারে থাকা **`add-software.bat`** ডাবল ক্লিক করে রান করুন।
+2. সফটওয়্যারের ব্রাঞ্চের নাম দিন (যেমন: `obs-studio`)।
+3. আপনার সফটওয়্যার বা ফাইলগুলো ফোল্ডারে রেখে এন্টার দিলেই এটি স্বয়ংক্রিয়ভাবে পুশ করে দেবে!
 
----
-
-## ➕ নতুন কোনো সফটওয়্যারের ব্রাঞ্চ কিভাবে যুক্ত করবেন?
-
-### অটোমেটিক পদ্ধতি (Windows Helper Script):
-1. ডিরেক্টরিতে থাকা `add-software.bat` ডাবল ক্লিক করে রান করুন।
-2. ব্রাঞ্চ নাম দিন (যেমন: `obs-studio`), স্ক্রিপ্ট নিজে থেকেই ব্রাঞ্চ বানিয়ে ক্লিন করে দেবে।
-3. আপনার ফাইলগুলো পেস্ট করে পুশ করে দিন!
-
-### ম্যানুয়াল পদ্ধতি (Git CLI):
+### পদ্ধতি ২: সরাসরি গিট কমান্ড (CLI)
 ```bash
-# ১. সম্পূর্ণ ফ্রেশ/অনাথ ব্রাঞ্চ তৈরি করুন
+# ১. নতুন অনাথ (orphan) ব্রাঞ্চ তৈরি করুন
 git checkout --orphan obs-studio
 
-# ২. আগের ফাইল পরিষ্কার করুন
+# ২. আগের ফাইল পরিষ্কার করে আপনার সফটওয়্যারের ফাইল পেস্ট করুন
 git rm -rf .
+# (আপনার ফাইল রাখুন)
 
-# ৩. আপনার সফটওয়্যারের ফাইলগুলো এই ফোল্ডারে রাখুন এবং কমিট করুন
+# ৩. কমিট এবং পুশ করুন
 git add .
 git commit -m "Add OBS Studio portable"
 git push -u origin obs-studio
 
-# ৪. এবার ওয়েবসাইটের মেইন ব্রাঞ্চে ফেরত যান
+# ৪. ওয়েবসাইটের মেইন ব্রাঞ্চে ফেরত যান
 git checkout main
-
-# ৫. software-data.js ফাইলে নতুন সফটওয়্যারের তথ্য যোগ করে পুশ করুন:
-git add software-data.js
-git commit -m "Add OBS Studio to portal list"
-git push origin main
 ```
+> 🎉 **পুশ শেষ হওয়ার সাথে সাথে লাইভ ওয়েবসাইটে রিফ্রেশ দিন — স্বয়ংক্রিয়ভাবে নতুন সফটওয়্যারটি দেখতে পাবেন!**
 
 ---
 
-## 💡 সুবিধা (Advantages)
-- **Zero Space Bloat**: `--single-branch` এর কারণে ব্যবহারকারী শুধু তার কাঙ্ক্ষিত সফটওয়্যারটিই পাবে, পুরো রিপোর মেমোরি খরচ হবে না।
-- **Auto Branch Switch**: ক্লোন হওয়ার সাথে সাথেই গিট ওই ব্রাঞ্চটিকে সিলেক্ট করে রাখে।
-- **Organized**: সব সফটওয়্যার একটিমাত্র গিট রিপোজিটরির অধীনে সাজানো।
+### 🎨 কাস্টম ইনফো দিতে চাইলে (Optional `software.json`):
+আপনার ব্রাঞ্চের মধ্যে যদি একটি `software.json` রাখেন, তবে সাইট সেটি রিড করে কাস্টম টাইটেল ও ডেসক্রিপশন দেখাবে (যা `add-software.bat` নিজে থেকেই বানিয়ে দেয়):
+```json
+{
+  "name": "OBS Studio Portable",
+  "version": "v30.2",
+  "category": "media",
+  "description": "Free and open source software for video recording and live streaming.",
+  "tags": ["Recording", "Streaming", "Open Source"]
+}
+```
+*(এই ফাইল না থাকলেও সমস্যা নেই — ব্রাঞ্চের নাম অনুযায়ী সাইট নিজে থেকেই সুন্দর ফরম্যাট করে নেবে!)*
+
+---
+
+## 🛠️ GitHub Pages চালু করার নিয়ম
+
+1. যান: [https://github.com/rayhanalshorif133/PC-Software/settings/pages](https://github.com/rayhanalshorif133/PC-Software/settings/pages)
+2. **Build and deployment**:
+   - Source: **Deploy from a branch**
+   - Branch: **`main`** (অথবা `gh-pages`), Folder: **`/ (root)`**
+3. **Save** ক্লিক করুন।
+4. ওয়েবসাইট লাইভ হবে: **`https://rayhanalshorif133.github.io/PC-Software/`**
