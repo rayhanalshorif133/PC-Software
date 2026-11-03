@@ -1,7 +1,1 @@
-[
-  "7zip-archiver",
-  "git-quick-tools",
-  "idm-downloader",
-  "vlc-media-player",
-  "vscode-portable"
-]
+["vscode-portable"]
