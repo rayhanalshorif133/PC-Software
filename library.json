@@ -1,0 +1,32 @@
+{
+  "downloaded": [
+    {
+      "id": "dl_pl_1789882234032_0_1yd3AS2_MbY",
+      "title": "GDS plus tutorial #1 - importing game assets into GDS plus",
+      "thumbnail": "https://i.ytimg.com/vi/1yd3AS2_MbY/maxresdefault.jpg",
+      "duration": "4:22",
+      "type": "video",
+      "date": "2026-09-20",
+      "completed_at": 1789882238.8987718,
+      "file_path": "C:\\Users\\Sabbir Ahmed\\Downloads\\GDS plus Tutorials\\GDS plus tutorial #1 - importing game assets into GDS plus.mp4",
+      "url": "https://www.youtube.com/watch?v=1yd3AS2_MbY",
+      "quality": "best"
+    },
+    {
+      "id": "dl_pl_1789882234032_1_J3L2rdxlyM0",
+      "title": "Opening GDS editor in the brave browser.",
+      "thumbnail": "https://i.ytimg.com/vi_webp/J3L2rdxlyM0/maxresdefault.webp",
+      "duration": "1:17",
+      "type": "video",
+      "date": "2026-09-20",
+      "completed_at": 1789882236.3699098,
+      "file_path": "C:\\Users\\Sabbir Ahmed\\Downloads\\GDS plus Tutorials\\Opening GDS editor in the brave browser..mp4",
+      "url": "https://www.youtube.com/watch?v=J3L2rdxlyM0",
+      "quality": "best"
+    }
+  ],
+  "settings": {
+    "download_folder": "C:\\Users\\Sabbir Ahmed\\Downloads",
+    "default_quality": "best"
+  }
+}
