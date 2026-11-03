@@ -1,62 +1,80 @@
-# CineCut Studio - Desktop Video Editor & Splitter
+# 🎬 Video to Image Converter Pro (PC Desktop Software)
 
-A modern, fast desktop video editor built with **Electron**, **FFmpeg**, and **Node.js** for Windows.
-
-## 🚀 Features
-
-- **Sleek Studio Interface**: Dark modern theme with responsive canvas timeline, glowing playhead, and glassmorphic UI.
-- **Easy Video Import**: Drag and drop any video (`.mp4`, `.mkv`, `.mov`, `.webm`, `.avi`) or click **Open Video**.
-- **Sample Video Included**: Click **Try Sample** to test right away with a built-in test video.
-- **Precision Video Player**:
-  - Play / Pause (Spacebar)
-  - Frame-by-frame stepping (`<|` / `|>`)
-  - 5-second skip forward / backward (`<<` / `>>`)
-  - Exact timecode display (`HH:MM:SS.ms`)
-  - Playback speed control (`0.5x` to `2.0x`)
-  - Volume slider and Fullscreen mode
-- **Split on the Fly**:
-  - Click **Split Clip [S]** or press keyboard shortcut **`S`** while playing or paused to split clips at the exact playhead position.
-- **Delete & Trim**:
-  - Select any clip and hit **Delete** / **Backspace** or click the trash button.
-  - Delete middle unwanted sections and merge the remaining video clips seamlessly.
-- **Live Edit Preview**:
-  - Toggle **Live Preview Edited Cut** to preview the final cut in the player without rendering (automatically jumps across cut regions).
-- **Export & Merge**:
-  - Choose output destination folder and file name.
-  - Real-time animated **Progress Bar** (0% - 100%) with processed time, encoding speed multiplier, and FPS.
-  - Frame-accurate H.264 + AAC encoding with zero audio/video desync.
-  - One-click **Open in Folder** and **Play Output Video** after conversion.
+ভিডিও থেকে নির্দিষ্ট FPS বা ইন্টারভাল অনুযায়ী স্বয়ংক্রিয়ভাবে হাই-কোয়ালিটি ছবি (Images) তৈরি করার একটি আধুনিক উইন্ডোজ ডেস্কটপ সফটওয়্যার।
 
 ---
 
-## 📦 How to Run
+## ✨ প্রধান ফিচারসমূহ (Key Features)
 
-### Option 1: Standalone Portable EXE (No setup needed)
-Double-click the ready-to-run `.exe` located at:
-```
-dist\CineCut-Studio.exe
-```
+1. **ভিডিও আপলোড/সিলেক্ট (Video Upload & Metadata):**
+   - যেকোনো ফরম্যাটের ভিডিও সিলেক্ট করার সুবিধা (`.mp4`, `.mkv`, `.avi`, `.mov`, `.flv`, `.wmv`, `.webm` ইত্যাদি)।
+   - ভিডিও সিলেক্ট করার সাথে সাথে স্বয়ংক্রিয়ভাবে তার **ডিউরেশন**, **মূল FPS**, **রেজোলিউশন**, **মোট ফ্রেম সংখ্যা** এবং **ফাইলের সাইজ** দেখতে পাবেন।
 
-### Option 2: Run in Development Mode
+2. **FPS ও কাস্টম ইন্টারভাল সেটিং (Flexible FPS & Interval Modes):**
+   - 🎯 **টার্গেট FPS মোড:** প্রতি সেকেন্ডে কয়টি ছবি চান তা সেট করতে পারবেন (যেমন: `1.0 FPS` = প্রতি সেকেন্ডে ১টি ছবি, `0.5 FPS` = প্রতি ২ সেকেন্ডে ১টি ছবি, `2.0 FPS`, `5.0 FPS` ইত্যাদি)।
+   - ⏱️ **সেকেন্ড ইন্টারভাল মোড:** প্রতি কতো সেকেন্ড পর পর ছবি নিবেন (যেমন: প্রতি ১ সেকেন্ড, প্রতি ২ সেকেন্ড, প্রতি ৫ সেকেন্ড ইত্যাদি)।
+   - 🎞️ **ফ্রেম ইন্টারভাল মোড:** প্রতি কতো ফ্রেম পর পর ছবি নিবেন (যেমন: প্রতি ১০ ফ্রেম, ৩০ ফ্রেম, ৬০ ফ্রেম পর পর)।
+   - 🌟 **সব ফ্রেম (All Frames):** ভিডিওর প্রতিটি একক ফ্রেম সেভ করার অপশন।
+   - ⚡ **রিয়েলটাইম হিসাব (Live Estimation):** সেটিংস পরিবর্তন করার সাথে সাথে স্বয়ংক্রিয়ভাবে **মোট কতটি ছবি তৈরি হবে** এবং **কত সাইজ (MB) লাগতে পারে** তা আগে থেকেই দেখতে পাবেন।
+
+3. **আউটপুট ফোল্ডার ও ফরম্যাট অপশন (Output Management):**
+   - নিজস্ব পছন্দের যেকোনো আউটপুট ফোল্ডার নির্বাচন করার সুবিধা।
+   - এক ক্লিকে আউটপুট ফোল্ডার ওপেন করার বাটন (`📂 খুলুন`)।
+   - ইমেজ ফরম্যাট নির্বাচন: **JPG**, **PNG (Lossless)**, **WEBP**।
+   - ইমেজ কোয়ালিটি অ্যাডজাস্টমেন্ট স্লাইডার (50% - 100%)।
+   - কাস্টম ফাইল নেইমিং প্রিফিক্স (`frame_00001.jpg` বা টাইমস্ট্যাম্প স্টাইল)।
+
+4. **লাইভ পার্সেন্টেজ ও প্রগ্রেস ট্র্যাকার (Real-time Progress & Status):**
+   - **পার্সেন্টেজ (`0%` থেকে `100%`)** বড় ও স্পষ্ট ডিসপ্লে।
+   - স্মুথ অ্যানিমেটেড প্রগ্রেস বার।
+   - কয়টি ছবি সেভ হয়েছে তার লাইভ কাউন্টার (যেমন: `১২০ / ৩০০ টি ছবি`)।
+   - লাইভ প্রসেসিং স্পিড (`Speed: 45.0 fps`)।
+   - অতিবাহিত সময় (Elapsed Time) ও বাকি থাকা আনুমানিক সময় (ETA Time Remaining)।
+   - **লাইভ ফ্রেম প্রিভিউ (Live Thumbnail):** যে ফ্রেমটি বর্তমানে সেভ হচ্ছে তা সফটওয়্যারের ভেতর রিয়েলটাইমে প্রদর্শিত হয়।
+   - কাজ চলাকালীন যেকোনো মুহূর্তে থামানোর জন্য **Cancel / Stop** বাটন।
+
+5. **সম্পন্ন হওয়ার পর অডিও নোটিফিকেশন ও অটো ফোল্ডার ওপেন:**
+   - কনভার্ট শেষ হলে উইন্ডোজ বিফ নোটিফিকেশন বাজবে এবং সরাসরি আউটপুট ফোল্ডার ওপেন করার অপশন আসবে।
+
+---
+
+## 🚀 কীভাবে সফটওয়্যারটি চালাবেন? (How to Run)
+
+### পদ্ধতি ১: এক ক্লিকে রান (সবচেয়ে সহজ)
+ফোল্ডারে থাকা **`run.bat`** ফাইলে ডাবল-ক্লিক করুন। সফটওয়্যারটি সাথে সাথে ওপেন হয়ে যাবে!
+
+### পদ্ধতি ২: পাইথন কমান্ড দিয়ে
+টার্মিনালে বা কমান্ড প্রম্পটে গিয়ে লিখুন:
 ```bash
-npm start
+python main.py
 ```
 
-### Option 3: Rebuild the Portable EXE
-```bash
-npm run dist
+### পদ্ধতি ৩: স্ট্যান্ডঅ্যালোন `.exe` সফটওয়্যার হিসেবে (No Python Needed)
+আপনি যদি পাইথন ছাড়াও সরাসরি ডাবল ক্লিকে যেকোনো পিসিতে চালাতে চান:
+1. ফোল্ডারে থাকা **`build_exe.bat`** ফাইলে ডাবল ক্লিক করুন।
+2. বিল্ড সম্পন্ন হলে **`dist\VideoToImage.exe`** তৈরি হয়ে যাবে।
+3. আপনি এই `VideoToImage.exe` ফাইলটি যেখানে খুশি কপি করে নিয়ে সরাসরি সফটওয়্যার হিসেবে ব্যবহার করতে পারবেন।
+
+---
+
+## 📋 প্রজেক্ট ফাইল পরিচিতি (Project Structure)
+
+```
+video-to-image/
+│
+├── main.py              # অ্যাপ্লিকেশন চালুর মূল এন্ট্রি পয়েন্ট
+├── app.py               # CustomTkinter দিয়ে তৈরি আধুনিক GUI ইন্টারফেস
+├── video_extractor.py   # উচ্চগতির অপটিমাইজড ফ্রেম এক্সট্র্যাকশন ইঞ্জিন
+├── run.bat              # উইন্ডোজে ডাবল-ক্লিকে অ্যাপ চালানোর ব্যাচ স্ক্রিপ্ট
+├── build_exe.bat        # স্ট্যান্ডঅ্যালোন .exe তৈরি করার ব্যাচ স্ক্রিপ্ট
+├── requirements.txt     # প্রয়োজনীয় লাইব্রেরির তালিকা
+└── README.md            # বিস্তারিত নির্দেশিকা
 ```
 
 ---
 
-## ⌨️ Keyboard Shortcuts
-
-| Shortcut | Action |
-| :--- | :--- |
-| `Space` | Play / Pause |
-| `S` | Split clip at current playhead position |
-| `Delete` / `Backspace` | Delete selected clip |
-| `Left Arrow` / `Right Arrow` | Skip 5s backward / forward |
-| `Shift` + `Left` / `Right` | Skip 1s backward / forward |
-| `M` | Mute / Unmute Audio |
+## 🛠️ সিস্টেম রিকোয়ারমেন্টস
+- Windows 10 / 11 (বা যেকোনো Windows PC)
+- Python 3.9+ (পিসিতে না থাকলে পাইথন ইনস্টল করে নিন)
+- লাইব্রেরি ইনস্টল করতে চাইলে: `pip install -r requirements.txt`
 
