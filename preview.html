@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ভিডিও প্রিভিউ ও ডাউনলোড - TabScreen Recorder</title>
+  <link rel="stylesheet" href="preview.css">
+</head>
+<body>
+  <div class="layout-container">
+    <!-- Top Navbar -->
+    <header class="navbar">
+      <div class="nav-brand">
+        <div class="brand-logo">
+          <span class="rec-dot"></span>
+        </div>
+        <div class="brand-text">
+          <h1 class="brand-title">TabScreen Recorder</h1>
+          <span class="brand-badge">ট্যাব স্ক্রিন রেকর্ডার</span>
+        </div>
+      </div>
+      <div class="nav-actions">
+        <button id="viewAllBtn" class="btn btn-secondary">
+          📂 সব রেকর্ডিং তালিকা (<span id="recordingCountBadge">0</span>)
+        </button>
+      </div>
+    </header>
+
+    <!-- Loading Indicator -->
+    <div id="loadingIndicator" class="loading-banner">
+      <div class="spinner"></div>
+      <span>ভিডিও লোড হচ্ছে, অনুগ্রহ করে একটু অপেক্ষা করুন...</span>
+    </div>
+
+    <!-- Not Found Alert -->
+    <div id="notFoundNotice" class="alert-box alert-danger hidden">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content">
+        <strong>রেকর্ডিংটি পাওয়া যায়নি বা এখনো প্রসেস হচ্ছে।</strong>
+        <p>দয়া করে কয়েক সেকেন্ড পর পেজটি রিফ্রেশ (<kbd>F5</kbd>) করুন অথবা নিচের তালিকা থেকে রেকর্ডিং সিলেক্ট করুন।</p>
+      </div>
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+      <!-- Player & Info Section -->
+      <section class="player-section" id="playerSection">
+        <div class="video-wrapper">
+          <video id="videoPlayer" controls playsinline preload="auto">
+            আপনার ব্রাউজার ভিডিও প্লে করতে সমর্থন করে না।
+          </video>
+        </div>
+
+        <!-- Video Metadata & Actions Card -->
+        <div class="video-meta-card">
+          <div class="meta-header">
+            <div>
+              <h2 id="metaTitle" class="video-title">ট্যাব রেকর্ডিং</h2>
+              <p id="metaUrl" class="video-url">URL</p>
+            </div>
+            <div class="action-buttons">
+              <button id="downloadBtn" class="btn btn-download">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span>ভিডিও ডাউনলোড করুন (.webm)</span>
+              </button>
+
+              <button id="deleteBtn" class="btn btn-delete" title="এই রেকর্ডিংটি ডিলিট করুন">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          <!-- Video Stats Pills -->
+          <div class="stats-grid">
+            <div class="stat-pill">
+              <span class="stat-label">রেকর্ডিং সময় (Duration):</span>
+              <strong id="metaDuration" class="stat-value">--:--</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">ফাইল সাইজ (Size):</span>
+              <strong id="metaSize" class="stat-value">-- MB</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">তারিখ ও সময় (Date):</span>
+              <strong id="metaDate" class="stat-value">--</strong>
+            </div>
+            <div class="stat-pill">
+              <span class="stat-label">প্রাইভেসি মোড:</span>
+              <strong class="stat-value text-green">🔒 শুধুমাত্র নির্দিষ্ট ট্যাব</strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- All Recordings Drawer / Library -->
+      <section class="library-section" id="librarySection">
+        <div class="library-header">
+          <h2>সংরক্ষিত রেকর্ডিংস তালিকা</h2>
+          <button id="clearAllBtn" class="btn btn-sm btn-outline-danger">সব মুছে ফেলুন</button>
+        </div>
+
+        <div id="recordingsList" class="recordings-grid">
+          <!-- Dynamically populated -->
+        </div>
+
+        <div id="emptyListNotice" class="empty-notice hidden">
+          <p>কোনো সংরক্ষিত রেকর্ডিং পাওয়া যায়নি।</p>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="db.js"></script>
+  <script src="preview.js"></script>
+</body>
+</html>

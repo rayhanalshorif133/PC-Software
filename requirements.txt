@@ -1,4 +1,0 @@
-yt-dlp>=2026.8.19
-pywebview>=6.2.1
-imageio-ffmpeg>=0.6.0
-

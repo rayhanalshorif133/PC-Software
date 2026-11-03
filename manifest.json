@@ -1,0 +1,39 @@
+{
+  "manifest_version": 3,
+  "name": "TabScreen Recorder - Active Tab Only",
+  "version": "1.0.0",
+  "description": "শুধুমাত্র বর্তমান ওপেন ট্যাবটির স্ক্রিন ও অডিও রেকর্ড করুন। অন্য কোনো ট্যাব বা ক্রোম ব্রাউজারের বাইরের স্ক্রিন রেকর্ড হবে না।",
+  "icons": {
+    "16": "icons/icon-16.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "TabScreen Recorder",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "48": "icons/icon-48.png",
+      "128": "icons/icon-128.png"
+    }
+  },
+  "background": {
+    "service_worker": "background.js"
+  },
+  "permissions": [
+    "tabCapture",
+    "offscreen",
+    "storage",
+    "activeTab",
+    "tabs"
+  ],
+  "commands": {
+    "toggle-recording": {
+      "suggested_key": {
+        "default": "Alt+Shift+R"
+      },
+      "description": "Start/Stop recording the current active tab"
+    }
+  }
+}
+

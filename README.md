@@ -1,45 +1,72 @@
-# Pro Downloader - Desktop Video & Audio Downloader
+# TabScreen Recorder - শুধুমাত্র নির্দিষ্ট ট্যাব স্ক্রিন রেকর্ডার (Active Tab Only)
 
-A modern, high-speed desktop application for downloading and managing online videos and music, built with Python, PyWebView (Microsoft Edge Chromium), `yt-dlp`, and bundled FFmpeg.
-
----
-
-## ✨ Features
-
-- **Sleek Cyber-Glassmorphism UI**:
-  - Custom dark title bar with Pro Downloader vector icon and Windows 11 style window controls.
-  - Left navigation sidebar with `⚡ PRO ACTIVE`, quick collection filters, clips & movies badges.
-  - Top search engine bar with one-click **Paste from Clipboard**, URL input, **Analyze**, and **Fast Download** buttons.
-  - Dynamic fallback thumbnails so video cards always look crisp without broken image icons.
-  - Category filter tabs: All Media, Clips & Shorts, Movies & Videos, Audio MP3.
-- **Unlimited High-Speed Media Downloader**:
-  - Download single videos, shorts, or entire playlists.
-  - Choose quality: **Best Available (4K/2K/1080p)**, **1080p Full HD**, **720p HD**, **480p Standard**, or **Audio Only (MP3 320kbps)**.
-  - Merges video and audio streams seamlessly using bundled FFmpeg (`imageio-ffmpeg`).
-  - Real-time animated progress bar: percentage, download speed (MB/s), ETA, and file size.
-- **Built-in Media Player & Library**:
-  - Play downloaded MP4/WebM videos and MP3 audio directly inside the desktop app.
-  - Open containing folder in Windows Explorer with one click.
-  - Import local video files (`MP4`, `MKV`, `WEBM`, etc.) from your computer into your collection.
-  - Configurable download folder in Preferences.
+একটি আধুনিক এবং শক্তিশালী Google Chrome Extension (Manifest V3), যা **শুধুমাত্র আপনার বর্তমান ওপেন থাকা ব্রাউজার ট্যাবটির স্ক্রিন ও অডিও রেকর্ড করে**।
 
 ---
 
-## 🚀 How to Run
+## 🎯 আপনার চাহিদামতো প্রধান বৈশিষ্ট্যসমূহ (Features)
 
-### Option 1: Double-click `run.bat`
-Simply double-click `run.bat` in Windows Explorer.
-
-### Option 2: Run via Terminal
-```powershell
-python app.py
-```
+1. **শুধুমাত্র নির্দিষ্ট ট্যাব ক্যাপচার (Strict Tab-Only Capture)**:
+   - রেকর্ড শুরু করলে শুধুমাত্র সেই নির্দিষ্ট ট্যাবটির ভেতরে যা কিছু ঘটছে তা-ই রেকর্ড হবে।
+   - ক্রোম ব্রাউজারের বাইরের কোনো স্ক্রিন (ডেস্কটপ, অন্যান্য সফটওয়্যার/উইন্ডো) রেকর্ড হবে না।
+   - আপনি ব্রাউজারের অন্য কোনো ট্যাবে চলে গেলেও অন্য ট্যাবের তথ্য রেকর্ড হবে না।
+2. **ট্যাব সাউন্ড ও মাইক্রোফোন সাপোর্ট**:
+   - ট্যাবের ভেতরের গান, ভিডিও বা অডিও সাউন্ড রেকর্ড করা যায়।
+   - ট্যাবের সাউন্ড রেকর্ড চলাকালীন আপনার স্পিকারেও স্বাভাবিকভাবে শুনতে পারবেন (অটোমেটিক অডিও রাউটিং)।
+   - প্রয়োজন হলে নিজের মুখের কথা রেকর্ড করতে মাইক্রোফোন (Mic) অন করার অপশন রয়েছে।
+3. **ফুল এইচডি (1080p / 720p) কোয়ালিটি**:
+   - ক্রিস্টাল ক্লিয়ার VP9/VP8 WebM ফরম্যাটে হাই-কোয়ালিটি ভিডিও তৈরি হয়।
+4. **ইন-বিল্ট প্লেয়ার ও ইনস্ট্যান্ট ডাউনলোড**:
+   - রেকর্ডিং থামানোর সাথে সাথে স্বয়ংক্রিয়ভাবে ভিডিও প্রিভিউ পেজ ওপেন হবে।
+   - সরাসরি ব্রাউজারেই রেকর্ড হওয়া ভিডিও দেখতে পারবেন এবং এক ক্লিকেই `.webm` ফাইল ডাউনলোড করতে পারবেন।
+5. **সম্পূর্ণ অফলাইন এবং ১০০% প্রাইভেট**:
+   - কোনো ক্লাউড সার্ভার বা ইন্টারনেটে ডেটা পাঠানো হয় না। সবকিছু সম্পূর্ণ আপনার ব্রাউজারের ভেতরে লোকালভাবে প্রসেস ও স্টোর হয়।
+6. **কীবোর্ড শর্টকাট**:
+   - সহজে রেকর্ড শুরু ও বন্ধ করতে <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> ব্যবহার করতে পারবেন।
 
 ---
 
-## 📦 Dependencies
-- `python >= 3.10`
-- `pywebview >= 6.2.1`
-- `yt-dlp >= 2026.8.19`
-- `imageio-ffmpeg >= 0.6.0`
-- `bottle >= 0.13.4`
+## 🚀 ক্রোম ব্রাউজারে এক্সটেনশনটি যেভাবে ইন্সটল করবেন (Installation Guide)
+
+খুব সহজেই মাত্র ১ মিনিটে এক্সটেনশনটি ক্রোমে যুক্ত করতে নিচের ধাপগুলো অনুসরণ করুন:
+
+1. **গুগল ক্রোম ওপেন করুন**।
+2. অ্যাড্রেস বারে টাইপ করুন: `chrome://extensions` এবং <kbd>Enter</kbd> চাপুন।
+3. পেজের উপরের ডান কোনায় থাকা **"Developer mode"** (ডেভেলপার মোড) টগলটি অন (ON) করুন।
+4. উপরের বাম দিকে নতুন তিনটি বাটন দেখতে পাবেন। সেখান থেকে **"Load unpacked"** বাটনে ক্লিক করুন।
+5. ফাইল সিলেক্টর থেকে এই ফোল্ডারটি সিলেক্ট করুন:
+   ```
+   E:\Rayhan\Practice\google-chrome
+   ```
+6. চমৎকার! **"TabScreen Recorder - Active Tab Only"** এক্সটেনশনটি আপনার গুগল ক্রোমে ইন্সটল হয়ে যাবে।
+7. ক্রোমের উপরের ডান কোনায় এক্সটেনশন (Puzzle) আইকনে ক্লিক করে **TabScreen Recorder**-টি **Pin 📌** করে নিন যাতে সহজে এক ক্লিকে ব্যবহার করা যায়।
+
+---
+
+## 🎬 যেভাবে রেকর্ড করবেন (How to Use)
+
+1. আপনি যে ট্যাবটি রেকর্ড করতে চান সেই ওয়েবসাইট বা ট্যাবে যান (যেমন: YouTube, Google, ইত্যাদি)।
+2. ব্রাউজার টুলবারের **TabScreen Recorder** আইকনে ক্লিক করুন।
+3. পপআপে আপনার বর্তমান ট্যাবের নাম ও অপশনগুলো দেখতে পাবেন:
+   - **ট্যাব সাউন্ড (Tab Audio)**: অন রাখুন যদি ওয়েবসাইটের সাউন্ড রেকর্ড করতে চান।
+   - **মাইক্রোফোন (Microphone)**: অন করুন যদি নিজের কথা রেকর্ড করতে চান।
+   - **কোয়ালিটি**: 1080p বা 720p সিলেক্ট করতে পারেন।
+4. **"রেকর্ড শুরু করুন (Start Recording)"** বাটনে ক্লিক করুন।
+   - সাথে সাথে এক্সটেনশন আইকনে লাল রঙের `REC` ব্যাজ দেখাবে।
+   - টাইমার চালু হবে।
+5. এখন আপনি নির্ভয়ে সেই ট্যাবে কাজ করুন। আপনি অন্য ট্যাবে গেলেও বা ক্রোম মিনিমাইজ করলেও শুধুমাত্র নির্বাচিত ট্যাবটিই রেকর্ড হতে থাকবে।
+6. রেকর্ডিং শেষ করতে পুনরায় এক্সটেনশন আইকনে ক্লিক করে **"রেকর্ড বন্ধ করুন (Stop & Save)"** বাটনে ক্লিক করুন (অথবা <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd> চাপুন)।
+7. সাথে সাথে ভিডিও প্রিভিউ পেজটি চালু হবে। সেখান থেকে আপনি ভিডিওটি প্লে করে দেখতে পারবেন এবং **"ভিডিও ডাউনলোড করুন (.webm)"** বাটনে ক্লিক করে ফাইলটি আপনার কম্পিউটারে সংরক্ষণ করতে পারবেন।
+
+---
+
+## 📁 ফাইল আর্কিটেকচার (Architecture)
+
+- `manifest.json`: Manifest V3 কনফিগারেশন (`tabCapture`, `offscreen`, `storage` পারমিশন সহ)।
+- `background.js`: সার্ভিস ওয়ার্কার যা রেকর্ডিং স্টেট, লাইফসাইকেল এবং শর্টকাট নিয়ন্ত্রণ করে।
+- `offscreen.html` ও `offscreen.js`: অফস্ক্রিন ডকুমেন্টে `MediaRecorder` ও `tabCapture` স্ট্রীম প্রসেসিং ও অডিও মিক্সিং সম্পন্ন করে।
+- `popup.html`, `popup.css`, `popup.js`: আধুনিক ও আকর্ষণীয় ইউজার ইন্টারফেস কন্ট্রোল।
+- `preview.html`, `preview.css`, `preview.js`: ভিডিও প্রিভিউ প্লেয়ার ও ডাউনলোড ম্যানেজার।
+- `db.js`: ব্রাউজারের IndexedDB-তে নিরাপদে ভিডিও সংরক্ষণ ও পরিচালনার হেল্পার।
+- `icons/`: ১৬x১৬, ৪৮x৪৮ এবং ১২৮x১২৮ পিক্সেলের ক্লিয়ার আইকন।
+

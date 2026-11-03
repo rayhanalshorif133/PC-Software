@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TabScreen Recorder</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-icon">
+          <span class="rec-dot"></span>
+        </div>
+        <div>
+          <h1 class="app-title">TabScreen Recorder</h1>
+          <p class="app-subtitle">Only Current Tab Screen Capture</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Restricted Tab Warning (Shown on chrome:// or about:blank) -->
+    <div id="restrictedAlert" class="alert-box alert-warning hidden">
+      <div class="alert-icon">⚠️</div>
+      <div class="alert-content">
+        <strong>সিস্টেম পেজ রেকর্ড সম্ভব নয়</strong>
+        <p>Chrome সিকিউরিটির জন্য ব্রাউজারের নিজস্ব পেজ (যেমন chrome://, Web Store) রেকর্ড করা যায় না। যেকোনো সাধারণ ওয়েবসাইট ওপেন করে রেকর্ড করুন।</p>
+      </div>
+    </div>
+
+    <!-- Error Alert -->
+    <div id="errorAlert" class="alert-box alert-danger hidden">
+      <div class="alert-icon">❌</div>
+      <div class="alert-content" id="errorMessage">সমস্যা হয়েছে</div>
+    </div>
+
+    <!-- Active Tab Info Card -->
+    <section class="card tab-card" id="tabInfoSection">
+      <div class="card-label">টার্গেট ট্যাব (Target Tab)</div>
+      <div class="tab-details">
+        <img id="tabFavicon" class="tab-favicon" src="icons/icon-16.png" alt="Favicon">
+        <div class="tab-text">
+          <span id="tabTitle" class="tab-title">Loading tab...</span>
+          <span id="tabUrl" class="tab-url">...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- IDLE STATE VIEW -->
+    <div id="idleStateView">
+      <!-- Guarantee Badge -->
+      <div class="guarantee-box">
+        <div class="guarantee-header">
+          <span class="lock-icon">🔒</span>
+          <strong>প্রাইভেসি নিশ্চয়তা:</strong>
+        </div>
+        <p class="guarantee-desc">
+          শুধুমাত্র <strong>বর্তমান ওপেন ট্যাবটিই</strong> রেকর্ড হবে। ক্রোম ব্রাউজারের বাইরের কোনো স্ক্রিন বা অন্য কোনো ট্যাব কখনোই রেকর্ড হবে না।
+        </p>
+      </div>
+
+      <!-- Settings / Options -->
+      <div class="settings-group">
+        <label class="toggle-option">
+          <input type="checkbox" id="tabAudioToggle" checked>
+          <span class="checkbox-custom"></span>
+          <span class="option-label">
+            <strong>ট্যাব সাউন্ড রেকর্ড (Tab Audio)</strong>
+            <small>ওয়েবসাইটের ভেতরের গান, ভিডিও বা অডিও রেকর্ড হবে</small>
+          </span>
+        </label>
+
+        <label class="toggle-option">
+          <input type="checkbox" id="micAudioToggle">
+          <span class="checkbox-custom"></span>
+          <span class="option-label">
+            <strong>মাইক্রোফোন (Microphone Audio)</strong>
+            <small>আপনার মুখের কথা রেকর্ড করতে চাইলে অন করুন</small>
+          </span>
+        </label>
+
+        <div class="select-option-row">
+          <label for="resolutionSelect" class="select-label">ভিডিও কোয়ালিটি:</label>
+          <select id="resolutionSelect" class="custom-select">
+            <option value="1080p" selected>1080p Full HD</option>
+            <option value="720p">720p HD</option>
+            <option value="original">Original Screen Size</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Action Button -->
+      <button id="startBtn" class="btn btn-primary btn-record">
+        <span class="btn-icon-dot"></span>
+        <span>রেকর্ড শুরু করুন (Start Recording)</span>
+      </button>
+    </div>
+
+    <!-- RECORDING STATE VIEW (Shown when actively recording) -->
+    <div id="recordingStateView" class="hidden">
+      <div class="live-recording-card">
+        <div class="pulse-indicator-row">
+          <span class="pulsing-rec-dot"></span>
+          <span class="rec-status-text">রেকর্ডিং চলছে (RECORDING)</span>
+        </div>
+        
+        <div class="timer-display" id="recordTimer">00:00</div>
+
+        <p class="recording-tip">
+          ট্যাবটি খোলা রাখুন। আপনি চাইলে অন্য ট্যাবে যেতে পারেন বা ক্রোম মিনিমাইজ করতে পারেন—শুধুমাত্র এই নির্দিষ্ট ট্যাবটিই রেকর্ড হতে থাকবে।
+        </p>
+      </div>
+
+      <button id="stopBtn" class="btn btn-danger btn-stop">
+        <span class="btn-icon-square"></span>
+        <span>রেকর্ড বন্ধ করুন (Stop & Save)</span>
+      </button>
+    </div>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <button id="historyBtn" class="btn-link">
+        📂 সংরক্ষিত ভিডিও দেখুন (Past Recordings)
+      </button>
+      <div class="shortcut-tip">
+        শর্টকাট: <kbd>Alt</kbd> + <kbd>Shift</kbd> + <kbd>R</kbd>
+      </div>
+    </footer>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
+
