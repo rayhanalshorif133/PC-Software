@@ -1,0 +1,5 @@
+{
+    "require": {
+        "nativephp/desktop": "^2.3"
+    }
+}
