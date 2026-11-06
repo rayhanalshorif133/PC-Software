@@ -1,0 +1,68 @@
+# ==========================================
+# Byte-compiled / optimized / DLL files
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+*.pyo
+
+# ==========================================
+# Virtual Environments
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# ==========================================
+# PyInstaller & Build Outputs
+# ==========================================
+build/
+dist/
+*.spec
+
+# ==========================================
+# Executables & Large Binaries
+# ==========================================
+*.exe
+ffmpeg.exe
+
+# ==========================================
+# Exported & Temporary Media Files
+# (Preserve test_sample.mp4 for the app)
+# ==========================================
+test_export_run.mp4
+*_export*
+output_*
+*.tmp
+*.temp
+
+# ==========================================
+# IDE & Code Editor Files
+# ==========================================
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.swp
+*.swo
+
+# ==========================================
+# Operating System Files
+# ==========================================
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ==========================================
+# Environment Variables & Logs
+# ==========================================
+.env
+.env.*
+*.log
+
