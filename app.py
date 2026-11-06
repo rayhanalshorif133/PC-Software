@@ -77,18 +77,29 @@ def get_downloads_folder():
         return os.path.normpath(std)
     return os.path.normpath(os.path.expanduser('~'))
 
+import hashlib
+import tempfile
+
 SETTINGS_FILE = os.path.join(os.path.expanduser('~'), '.veditor_settings.json')
 
 def load_settings():
+    defaults = {
+        'export_dir': get_downloads_folder(),
+        'last_video_path': '',
+        'last_open_dir': ''
+    }
     if os.path.exists(SETTINGS_FILE):
         try:
             with open(SETTINGS_FILE, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                if isinstance(data, dict) and data.get('export_dir') and os.path.exists(data['export_dir']):
-                    return data
+                if isinstance(data, dict):
+                    defaults.update(data)
+                    if not defaults.get('export_dir') or not os.path.exists(defaults['export_dir']):
+                        defaults['export_dir'] = get_downloads_folder()
+                    return defaults
         except Exception:
             pass
-    return {'export_dir': get_downloads_folder()}
+    return defaults
 
 def save_settings(settings):
     try:
@@ -96,6 +107,128 @@ def save_settings(settings):
             json.dump(settings, f, indent=2)
     except Exception as e:
         print("[V-Editor] Failed to save settings:", e)
+
+# Fast Video Thumbnail Generator & Disk Cache
+class VideoThumbnailCache:
+    def __init__(self, ffmpeg_exe):
+        self.ffmpeg_exe = ffmpeg_exe
+        self.cache_dir = os.path.join(tempfile.gettempdir(), 'veditor_thumb_cache')
+        os.makedirs(self.cache_dir, exist_ok=True)
+        self.jobs = {}
+        self.lock = threading.Lock()
+
+    def resolve_path(self, video_path):
+        if not video_path:
+            return ""
+        if video_path in ['test_sample.mp4', '/test_sample.mp4']:
+            return os.path.normpath(os.path.join(BASE_DIR, 'test_sample.mp4'))
+        if not os.path.isabs(video_path):
+            local_cand = os.path.join(BASE_DIR, video_path)
+            if os.path.exists(local_cand):
+                return os.path.normpath(local_cand)
+        return os.path.normpath(os.path.abspath(video_path))
+
+    def get_video_id(self, video_path):
+        norm = self.resolve_path(video_path)
+        try:
+            st = os.stat(norm)
+            key = f"{norm}_{st.st_size}_{st.st_mtime}"
+        except Exception:
+            key = norm
+        return hashlib.md5(key.encode('utf-8')).hexdigest()
+
+    def ensure_thumbnails(self, video_path):
+        resolved = self.resolve_path(video_path)
+        if not resolved or not os.path.exists(resolved):
+            return None
+
+        video_id = self.get_video_id(resolved)
+        thumb_folder = os.path.join(self.cache_dir, video_id)
+
+        with self.lock:
+            if resolved in self.jobs and os.path.exists(thumb_folder):
+                return self.jobs[resolved]
+
+            os.makedirs(thumb_folder, exist_ok=True)
+            job = {
+                'dir': thumb_folder,
+                'done': False,
+                'fps': 2.0,
+                'video_path': resolved
+            }
+            self.jobs[resolved] = job
+
+        existing = [f for f in os.listdir(thumb_folder) if f.startswith('thumb_') and f.endswith('.jpg')]
+        if len(existing) > 5:
+            job['done'] = True
+            job['count'] = len(existing)
+            return job
+
+        def worker():
+            try:
+                pattern = os.path.join(thumb_folder, 'thumb_%04d.jpg')
+                cmd = [
+                    self.ffmpeg_exe,
+                    '-y',
+                    '-i', resolved,
+                    '-vf', 'fps=2,scale=120:-1',
+                    '-q:v', '6',
+                    pattern
+                ]
+                creationflags = 0x08000000 if os.name == 'nt' else 0
+                subprocess.run(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, creationflags=creationflags)
+                job['done'] = True
+                job['count'] = len([f for f in os.listdir(thumb_folder) if f.startswith('thumb_') and f.endswith('.jpg')])
+            except Exception as e:
+                print("[V-Editor] Thumbnail extraction failed:", e)
+
+        t = threading.Thread(target=worker, daemon=True)
+        t.start()
+        return job
+
+    def get_thumb_path_for_time(self, video_path, time_sec):
+        resolved = self.resolve_path(video_path)
+        job = self.ensure_thumbnails(resolved)
+        if not job:
+            return None
+
+        idx = max(1, int(round(time_sec * job['fps'])) + 1)
+        thumb_folder = job['dir']
+        filename = f"thumb_{idx:04d}.jpg"
+        target_file = os.path.join(thumb_folder, filename)
+
+        waited = 0.0
+        while not os.path.exists(target_file) and not job.get('done', False) and waited < 0.4:
+            import time
+            time.sleep(0.04)
+            waited += 0.04
+
+        if os.path.exists(target_file):
+            return target_file
+
+        try:
+            files = sorted([f for f in os.listdir(thumb_folder) if f.startswith('thumb_') and f.endswith('.jpg')])
+            if files:
+                best = files[0]
+                best_diff = 999999
+                for f in files:
+                    try:
+                        f_idx = int(f.replace('thumb_', '').replace('.jpg', ''))
+                        diff = abs(f_idx - idx)
+                        if diff < best_diff:
+                            best_diff = diff
+                            best = f
+                        if diff == 0:
+                            break
+                    except ValueError:
+                        continue
+                return os.path.join(thumb_folder, best)
+        except Exception:
+            pass
+
+        return None
+
+THUMBNAIL_CACHE = VideoThumbnailCache(FFMPEG_EXE)
 
 # Threaded HTTP Server
 class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
@@ -139,6 +272,33 @@ class VideoRequestHandler(BaseHTTPRequestHandler):
                     self.serve_range(video_path, mime or 'video/mp4')
                     return
             self.send_error(404, 'Video not found')
+        elif path == '/thumb':
+            query = urllib.parse.parse_qs(parsed.query)
+            video_path = query.get('path', [None])[0]
+            time_str = query.get('t', ['0'])[0]
+            if video_path:
+                video_path = urllib.parse.unquote(video_path)
+                try:
+                    time_sec = float(time_str)
+                except ValueError:
+                    time_sec = 0.0
+
+                thumb_file = THUMBNAIL_CACHE.get_thumb_path_for_time(video_path, time_sec)
+                if thumb_file and os.path.exists(thumb_file):
+                    self.serve_image(thumb_file)
+                    return
+            self.send_response(204)
+            self.end_headers()
+        elif path == '/ensure_thumbnails':
+            query = urllib.parse.parse_qs(parsed.query)
+            video_path = query.get('path', [None])[0]
+            if video_path:
+                video_path = urllib.parse.unquote(video_path)
+                THUMBNAIL_CACHE.ensure_thumbnails(video_path)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(b'{"status":"ok"}')
         else:
             rel = path.lstrip('/')
             filepath = os.path.join(UI_DIR, rel)
@@ -147,6 +307,19 @@ class VideoRequestHandler(BaseHTTPRequestHandler):
                 self.serve_file(filepath, mime or 'application/octet-stream')
             else:
                 self.send_error(404, 'File not found')
+
+    def serve_image(self, filepath):
+        try:
+            with open(filepath, 'rb') as f:
+                content = f.read()
+            self.send_response(200)
+            self.send_header('Content-Type', 'image/jpeg')
+            self.send_header('Content-Length', str(len(content)))
+            self.send_header('Cache-Control', 'public, max-age=86400')
+            self.end_headers()
+            self.wfile.write(content)
+        except Exception:
+            pass
 
     def serve_file(self, filepath, content_type):
         if not os.path.exists(filepath):
@@ -392,8 +565,43 @@ class VideoEditorApi:
     def get_sample_path(self):
         sample = os.path.join(BASE_DIR, 'test_sample.mp4')
         if os.path.exists(sample):
+            THUMBNAIL_CACHE.ensure_thumbnails(sample)
             return os.path.abspath(sample)
         return ""
+
+    def get_last_video_path(self):
+        settings = load_settings()
+        last_path = settings.get('last_video_path', '')
+        if last_path and os.path.exists(last_path):
+            abs_path = os.path.abspath(last_path)
+            THUMBNAIL_CACHE.ensure_thumbnails(abs_path)
+            return abs_path
+        return ""
+
+    def set_last_video_path(self, file_path):
+        if not file_path:
+            return False
+        if file_path in ['test_sample.mp4', '/test_sample.mp4']:
+            file_path = os.path.join(BASE_DIR, 'test_sample.mp4')
+        if os.path.exists(file_path):
+            abs_path = os.path.abspath(file_path)
+            settings = load_settings()
+            settings['last_video_path'] = abs_path
+            settings['last_open_dir'] = os.path.dirname(abs_path)
+            save_settings(settings)
+            THUMBNAIL_CACHE.ensure_thumbnails(abs_path)
+            return True
+        return False
+
+    def prepare_thumbnails(self, file_path):
+        if not file_path:
+            return False
+        if file_path in ['test_sample.mp4', '/test_sample.mp4']:
+            file_path = os.path.join(BASE_DIR, 'test_sample.mp4')
+        if os.path.exists(file_path):
+            THUMBNAIL_CACHE.ensure_thumbnails(file_path)
+            return True
+        return False
 
     def get_default_save_path(self, video_title=""):
         settings = load_settings()
@@ -417,19 +625,33 @@ class VideoEditorApi:
         try:
             import tkinter as tk
             from tkinter import filedialog
+            settings = load_settings()
+            initialdir = settings.get('last_open_dir')
+            if not initialdir or not os.path.exists(initialdir):
+                last_path = settings.get('last_video_path')
+                if last_path and os.path.exists(last_path):
+                    initialdir = os.path.dirname(last_path)
+                else:
+                    initialdir = os.path.expanduser('~')
+
             root = tk.Tk()
             root.withdraw()
             root.attributes('-topmost', True)
             chosen = filedialog.askopenfilename(
                 parent=root,
                 title="Select Video File",
+                initialdir=initialdir,
                 filetypes=[
                     ("Video Files", "*.mp4;*.mov;*.avi;*.mkv;*.webm;*.flv;*.m4v"),
                     ("All Files", "*.*")
                 ]
             )
             root.destroy()
-            return chosen or ""
+            if chosen:
+                chosen = os.path.normpath(chosen)
+                self.set_last_video_path(chosen)
+                return chosen
+            return ""
         except Exception as e:
             print("[V-Editor] open dialog error:", e)
             return ""

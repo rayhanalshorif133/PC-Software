@@ -530,14 +530,23 @@ button:active {
     height: 100%;
     display: flex;
     overflow: hidden;
-    background-color: #1a1a20;
+    background-color: #14141a;
+    user-select: none;
 }
 
 .thumb-frame {
     height: 100%;
-    flex: 1;
+    flex: 1 1 0;
+    min-width: 0;
     object-fit: cover;
     pointer-events: none;
+    background-color: #1a1a24;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    display: block;
+}
+
+.thumb-frame:last-child {
+    border-right: none;
 }
 
 /* DURATION BADGE (As 1.5s in demo.jpeg) */

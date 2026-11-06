@@ -177,6 +177,13 @@
     async function checkInitialVideo() {
         try {
             if (window.pywebview && window.pywebview.api) {
+                // 1. Restore previously opened video path if available
+                const lastPath = await window.pywebview.api.get_last_video_path();
+                if (lastPath) {
+                    console.log('[V-Editor] Restoring last video path:', lastPath);
+                    loadVideoFile(lastPath);
+                    return;
+                }
                 const samplePath = await window.pywebview.api.get_sample_path();
                 if (samplePath) {
                     loadVideoFile(samplePath);
@@ -186,6 +193,13 @@
         } catch (e) {
             console.warn('Pywebview API check:', e);
         }
+
+        const localSaved = localStorage.getItem('veditor_last_video_path');
+        if (localSaved && localSaved !== 'test_sample.mp4') {
+            loadVideoFile(localSaved);
+            return;
+        }
+
         // Fallback: load /test_sample.mp4 via HTTP server
         fetch('/test_sample.mp4', { method: 'HEAD' })
             .then(res => {
@@ -233,7 +247,14 @@
     // --- VIDEO LOADING ---
     async function loadVideoFile(filePath) {
         state.videoPath = filePath;
+        localStorage.setItem('veditor_last_video_path', filePath);
+        if (window.pywebview && window.pywebview.api) {
+            try {
+                window.pywebview.api.set_last_video_path(filePath);
+            } catch (e) {}
+        }
         const encoded = encodeURIComponent(filePath);
+        fetch(`/ensure_thumbnails?path=${encoded}`).catch(() => {});
         const streamUrl = `/video_stream?path=${encoded}`;
         loadVideoUrl(streamUrl, filePath);
     }
@@ -420,53 +441,56 @@
     }
 
     function setActiveClip(index) {
-        if (state.activeClipIndex === index) return;
+        if (index < 0 || index >= state.clips.length) return;
+        const prevIndex = state.activeClipIndex;
         state.activeClipIndex = index;
         renderTimeline();
         updateDrawerValues();
+
+        if (prevIndex !== index) {
+            let clipStart = 0;
+            for (let i = 0; i < index; i++) {
+                clipStart += getClipEffectiveDuration(state.clips[i]);
+            }
+            const clipEnd = clipStart + getClipEffectiveDuration(state.clips[index]);
+
+            if (state.currentTime < clipStart || state.currentTime >= clipEnd) {
+                seekToProjectTime(clipStart, true);
+            }
+        }
     }
 
     function generateClipThumbnails(clip, container, width) {
-        const frameCount = Math.max(1, Math.min(8, Math.floor(width / 45)));
+        container.innerHTML = '';
+        const thumbWidth = 50; // Dense frame width in pixels for continuous filmstrip
+        const frameCount = Math.max(1, Math.round(width / thumbWidth));
+        const encodedPath = encodeURIComponent(state.videoPath || 'test_sample.mp4');
+
         for (let i = 0; i < frameCount; i++) {
-            const frameDiv = document.createElement('div');
-            frameDiv.className = 'thumb-frame';
-            frameDiv.style.backgroundColor = `hsl(${(i * 35) % 360}, 20%, 18%)`;
-            frameDiv.style.width = `${100 / frameCount}%`;
-            container.appendChild(frameDiv);
+            const frameRatio = (i + 0.5) / frameCount;
+            const sourceTime = clip.reverse 
+                ? clip.sourceEnd - frameRatio * (clip.sourceEnd - clip.sourceStart)
+                : clip.sourceStart + frameRatio * (clip.sourceEnd - clip.sourceStart);
+
+            const img = document.createElement('img');
+            img.className = 'thumb-frame';
+            img.alt = '';
+            img.draggable = false;
+            img.loading = 'lazy';
+
+            const thumbUrl = `/thumb?path=${encodedPath}&t=${sourceTime.toFixed(2)}`;
+            img.src = thumbUrl;
+
+            img.onerror = () => {
+                setTimeout(() => {
+                    if (!img.complete || img.naturalWidth === 0) {
+                        img.src = `${thumbUrl}&_r=${Date.now()}`;
+                    }
+                }, 800);
+            };
+
+            container.appendChild(img);
         }
-
-        if (mainVideo.readyState >= 2) {
-            captureThumbnails(clip, container, frameCount);
-        }
-    }
-
-    async function captureThumbnails(clip, container, count) {
-        try {
-            const tempVid = document.createElement('video');
-            tempVid.src = state.videoSrc;
-            tempVid.muted = true;
-            tempVid.crossOrigin = 'anonymous';
-            await new Promise(r => tempVid.onloadedmetadata = r);
-
-            const canvas = document.createElement('canvas');
-            canvas.width = 60;
-            canvas.height = 90;
-            const ctx = canvas.getContext('2d');
-
-            const frames = container.querySelectorAll('.thumb-frame');
-            const step = (clip.sourceEnd - clip.sourceStart) / count;
-
-            for (let i = 0; i < count && i < frames.length; i++) {
-                const targetTime = clip.sourceStart + (i * step);
-                tempVid.currentTime = targetTime;
-                await new Promise(r => tempVid.onseeked = r);
-                ctx.drawImage(tempVid, 0, 0, canvas.width, canvas.height);
-                frames[i].style.backgroundImage = `url(${canvas.toDataURL('image/jpeg', 0.5)})`;
-                frames[i].style.backgroundSize = 'cover';
-                frames[i].style.backgroundPosition = 'center';
-            }
-        } catch (e) {}
     }
 
     // --- DRAGGING TRIM HANDLES `[` and `]` ---
@@ -524,6 +548,7 @@
     // --- PLAYHEAD SEEK & CENTER NEEDLE ALIGNMENT ---
     // Finds which clip covers global project time t and sets video currentTime
     function seekToProjectTime(t, syncScroll = true) {
+        if (!state.clips.length) return;
         const totalDur = getTotalDuration();
         t = Math.max(0, Math.min(totalDur, t));
         state.currentTime = t;
@@ -535,7 +560,7 @@
 
         for (let i = 0; i < state.clips.length; i++) {
             const clipDur = getClipEffectiveDuration(state.clips[i]);
-            if (t <= accumulated + clipDur || i === state.clips.length - 1) {
+            if (t < accumulated + clipDur || i === state.clips.length - 1) {
                 matchedIndex = i;
                 timeInClip = (t - accumulated) * (state.clips[i].speed || 1.0);
                 break;
@@ -553,7 +578,7 @@
             }
             targetSourceTime = Math.max(0, Math.min(state.videoDuration, targetSourceTime));
             
-            if (Math.abs(mainVideo.currentTime - targetSourceTime) > 0.15) {
+            if (!state.isPlaying || Math.abs(mainVideo.currentTime - targetSourceTime) > 0.15) {
                 mainVideo.currentTime = targetSourceTime;
             }
             mainVideo.playbackRate = activeClip.speed || 1.0;
@@ -798,11 +823,38 @@
         }
 
         pause();
-        state.clips.splice(state.activeClipIndex, 1);
-        state.activeClipIndex = Math.max(0, state.activeClipIndex - 1);
+        const deleteIndex = state.activeClipIndex;
+        if (deleteIndex < 0 || deleteIndex >= state.clips.length) return;
+
+        // Calculate the project start time of the clip being deleted
+        let clipStartTime = 0;
+        for (let i = 0; i < deleteIndex; i++) {
+            clipStartTime += getClipEffectiveDuration(state.clips[i]);
+        }
+
+        // Remove the active clip
+        state.clips.splice(deleteIndex, 1);
+
+        let newActiveIndex;
+        let targetTime;
+
+        if (deleteIndex < state.clips.length) {
+            // There IS a next part (which now sits at deleteIndex):
+            // Place the playhead at the 1st frame (start) of this next part
+            newActiveIndex = deleteIndex;
+            targetTime = clipStartTime;
+        } else {
+            // The deleted clip was the last one; select the preceding clip and seek to its end
+            newActiveIndex = state.clips.length - 1;
+            targetTime = getTotalDuration();
+        }
+
+        state.activeClipIndex = newActiveIndex;
+        state.currentTime = targetTime;
+
         pushHistory('Delete Clip');
         renderTimeline();
-        seekToProjectTime(state.currentTime, true);
+        seekToProjectTime(targetTime, true);
         updateUI();
     }
 
