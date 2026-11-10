@@ -1,0 +1,66 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyd
+
+# C extensions
+*.so
+
+# Distribution / packaging / PyInstaller outputs
+build/
+dist/
+*.manifest
+*.spec
+
+# Large binaries & compressed archives
+*.zip
+*.tar.gz
+*.rar
+*.7z
+
+# Virtual Environments
+.venv/
+venv/
+ENV/
+env/
+env.bak/
+venv.bak/
+
+# Logs and databases
+*.log
+*.sqlite
+*.sqlite3
+
+# Temporary session frames and output folders
+temp/
+tmp/
+Video_Frames_Export/
+Frames_*/
+
+# OS generated files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor & IDE configurations
+.idea/
+.vscode/
+*.sublime-workspace
+*.sublime-project
+
+# Environment variables & local secrets
+.env
+.env.local
+.env.*.local
+
+# Antigravity & Agent workspace artifacts
+.gemini/
