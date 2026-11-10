@@ -66,7 +66,11 @@ class FrameCard(ctk.CTkFrame):
         self.checkbox.pack(side="left")
 
         # Badge
-        if record.has_person:
+        if getattr(record, "is_full_body_face", False):
+            badge_text = "🌟 Full Body & Face"
+            badge_color = "#7c3aed"  # Vibrant Purple
+            text_color = "#ffffff"
+        elif record.has_person:
             badge_text = f"👤 {int(record.confidence * 100)}%"
             badge_color = "#10b981"  # Emerald green
             text_color = "#ffffff"
@@ -288,7 +292,12 @@ class ImagePreviewDialog(ctk.CTkToplevel):
         rec: FrameRecord = self.records[self.current_idx]
         
         # Update title & checkbox
-        badge = f"[👤 Person {int(rec.confidence * 100)}%]" if rec.has_person else "[⚪ No Person / Hidden]"
+        if getattr(rec, "is_full_body_face", False):
+            badge = "[🌟 Full Body & Clean Face]"
+        elif rec.has_person:
+            badge = f"[👤 Person {int(rec.confidence * 100)}%]"
+        else:
+            badge = "[⚪ No Person / Hidden]"
         self.title_label.configure(
             text=f"Frame #{rec.index + 1} • Time: {rec.timestamp_str} • {badge} ({self.current_idx + 1} of {len(self.records)})"
         )
@@ -300,7 +309,9 @@ class ImagePreviewDialog(ctk.CTkToplevel):
             import cv2
             img_bgr = cv2.imread(rec.full_path)
             if self.show_boxes.get() and rec.boxes:
-                img_bgr = PersonDetector.draw_detections(img_bgr, rec.boxes)
+                img_bgr = PersonDetector.draw_detections(
+                    img_bgr, rec.boxes, getattr(rec, "face_boxes", [])
+                )
                 
             img_rgb = cv2.cvtColor(img_bgr, cv2.COLOR_BGR2RGB)
             pil_img = Image.fromarray(img_rgb)

@@ -25,11 +25,12 @@ def build(onefile: bool = False):
         "-m",
         "PyInstaller",
         "--noconsole",
+        "--noconfirm",
         "--clean",
         "--name",
         app_name,
         "--add-data",
-        f"{model_path};models",
+        "models;models",
         "--collect-all",
         "customtkinter",
     ]

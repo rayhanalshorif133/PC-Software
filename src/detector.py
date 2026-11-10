@@ -26,21 +26,20 @@ def get_resource_path(relative_path: str) -> str:
 
 class PersonDetector:
     """
-    High-performance, lightweight Person Detector using YOLOv5n ONNX and OpenCV DNN.
-    Detects COCO class 0 (person).
+    High-performance, lightweight Person & Full-Body/Face Detector using
+    YOLOv5n ONNX + OpenCV YuNet DNN.
     """
 
-    def __init__(self, model_path: str = None):
+    def __init__(self, model_path: str = None, face_model_path: str = None):
         if model_path is None:
             model_path = get_resource_path(os.path.join("models", "yolov5n.onnx"))
             
         if not os.path.exists(model_path):
-            # Check current working directory or other candidates
             alt_path = os.path.join("models", "yolov5n.onnx")
             if os.path.exists(alt_path):
                 model_path = alt_path
             else:
-                raise FileNotFoundError(f"Model file not found at: {model_path}")
+                raise FileNotFoundError(f"Person model file not found at: {model_path}")
                 
         self.model_path = model_path
         self.net = cv2.dnn.readNetFromONNX(self.model_path)
@@ -51,20 +50,44 @@ class PersonDetector:
         except Exception:
             pass
         
-        # Warm up
+        # Warm up YOLO
         dummy = np.zeros((640, 640, 3), dtype=np.uint8)
         blob = cv2.dnn.blobFromImage(dummy, 1/255.0, (640, 640), swapRB=True, crop=False)
         self.net.setInput(blob)
         self.net.forward()
 
+        # Face Detector (YuNet)
+        if face_model_path is None:
+            face_model_path = get_resource_path(os.path.join("models", "yunet.onnx"))
+        if not os.path.exists(face_model_path):
+            alt_face = os.path.join("models", "yunet.onnx")
+            if os.path.exists(alt_face):
+                face_model_path = alt_face
+
+        self.face_detector = None
+        if os.path.exists(face_model_path):
+            try:
+                self.face_detector = cv2.FaceDetectorYN_create(
+                    model=face_model_path,
+                    config="",
+                    input_size=(320, 320),
+                    score_threshold=0.50,
+                    nms_threshold=0.3,
+                    top_k=10,
+                )
+            except Exception as e:
+                print(f"Warning: Could not initialize YuNet face detector: {e}")
+
     def detect(self, frame: np.ndarray, conf_threshold: float = 0.35, nms_threshold: float = 0.45):
         """
-        Detects if a person is present in the frame.
+        Detects if a person is present and verifies full body with clean face.
         
         Returns:
-            has_person (bool): True if at least one person detected above conf_threshold.
-            max_conf (float): Maximum confidence score for person class.
-            boxes (list): List of dicts [{'box': [x1, y1, w, h], 'conf': float}]
+            has_person (bool): True if at least one person detected.
+            max_conf (float): Maximum confidence score.
+            boxes (list): Person boxes [{'box': [x, y, w, h], 'conf': float}]
+            is_full_body_face (bool): True if full body + clean face detected.
+            face_boxes (list): Face boxes [{'box': [x, y, w, h], 'conf': float}]
         """
         h, w = frame.shape[:2]
         
@@ -83,8 +106,7 @@ class PersonDetector:
         self.net.setInput(blob)
         out = self.net.forward()
         
-        # YOLOv5 output shape: (1, 25200, 85)
-        # Class 0: person
+        # YOLOv5 class 0: person
         obj_conf = out[0, :, 4]
         person_cls_conf = out[0, :, 5]
         scores = obj_conf * person_cls_conf
@@ -92,7 +114,7 @@ class PersonDetector:
         mask = scores >= conf_threshold
         if not np.any(mask):
             max_c = float(np.max(scores)) if len(scores) > 0 else 0.0
-            return False, max_c, []
+            return False, max_c, [], False, []
             
         candidate_indices = np.where(mask)[0]
         boxes_list = []
@@ -100,13 +122,11 @@ class PersonDetector:
         
         for idx in candidate_indices:
             cx, cy, bw, bh = out[0, idx, 0:4]
-            # Convert letterbox coordinates back to original frame
             x1 = int(round((cx - bw / 2 - dw) / scale))
             y1 = int(round((cy - bh / 2 - dh) / scale))
             bw_orig = int(round(bw / scale))
             bh_orig = int(round(bh / scale))
             
-            # Clamp to frame bounds
             x1 = max(0, min(w - 1, x1))
             y1 = max(0, min(h - 1, y1))
             bw_orig = max(1, min(w - x1, bw_orig))
@@ -125,16 +145,68 @@ class PersonDetector:
                 })
                 
         max_c = float(max(confidences_list)) if confidences_list else 0.0
-        return len(final_boxes) > 0, max_c, final_boxes
+        has_person = len(final_boxes) > 0
+
+        # Check for Full Body + Clean Face
+        is_full_body_face = False
+        detected_face_boxes = []
+
+        if has_person and self.face_detector is not None:
+            for item in final_boxes:
+                bx, by, bw, bh = item["box"]
+                aspect = bh / bw if bw > 0 else 0
+                rel_h = bh / h
+                
+                # Full figure: vertical tall aspect ratio >= 1.5, height >= 18% of frame
+                is_full_figure = (aspect >= 1.5) and (rel_h >= 0.18)
+                
+                if is_full_figure:
+                    # Crop upper 45% (Head & Face area)
+                    y1 = max(0, by - 10)
+                    y2 = min(h, by + int(bh * 0.45))
+                    x1 = max(0, bx - 10)
+                    x2 = min(w, bx + bw + 10)
+                    
+                    if (y2 - y1) > 20 and (x2 - x1) > 20:
+                        roi = frame[y1:y2, x1:x2]
+                        rh, rw = roi.shape[:2]
+                        
+                        # Downscale ROI for sub-10ms face detection
+                        roi_scale = min(1.0, 320.0 / rw) if rw > 0 else 1.0
+                        roi_resized = cv2.resize(roi, (int(rw * roi_scale), int(rh * roi_scale)))
+                        
+                        self.face_detector.setInputSize((roi_resized.shape[1], roi_resized.shape[0]))
+                        _, faces = self.face_detector.detect(roi_resized)
+                        
+                        if faces is not None and len(faces) > 0:
+                            for face in faces:
+                                f_score = float(face[-1])
+                                if f_score >= 0.50:
+                                    is_full_body_face = True
+                                    # Convert face coordinates back to original frame
+                                    fx = int(round(face[0] / roi_scale)) + x1
+                                    fy = int(round(face[1] / roi_scale)) + y1
+                                    fw = int(round(face[2] / roi_scale))
+                                    fh = int(round(face[3] / roi_scale))
+                                    detected_face_boxes.append({
+                                        "box": [fx, fy, fw, fh],
+                                        "conf": f_score
+                                    })
+                                    break
+                if is_full_body_face:
+                    break
+
+        return has_person, max_c, final_boxes, is_full_body_face, detected_face_boxes
 
     @staticmethod
-    def draw_detections(frame: np.ndarray, boxes: list) -> np.ndarray:
-        """Draws bounding boxes and confidence badges on a copy of the frame."""
+    def draw_detections(frame: np.ndarray, boxes: list, face_boxes: list = None) -> np.ndarray:
+        """Draws bounding boxes and labels for body and face."""
         vis_frame = frame.copy()
+        
+        # 1. Person body boxes (Green)
         for item in boxes:
             x, y, w, h = item["box"]
             conf = item["conf"]
-            # Bright cyan/green bounding box
             cv2.rectangle(vis_frame, (x, y), (x + w, y + h), (0, 220, 100), 2)
             
             label = f"Person {int(conf * 100)}%"
@@ -143,8 +215,18 @@ class PersonDetector:
             thickness = 1
             (tw, th), baseline = cv2.getTextSize(label, font, font_scale, thickness)
             
-            # Label background banner
             cv2.rectangle(vis_frame, (x, max(0, y - th - 6)), (x + tw + 6, max(0, y)), (0, 220, 100), -1)
             cv2.putText(vis_frame, label, (x + 3, max(th, y - 4)), font, font_scale, (0, 0, 0), thickness, cv2.LINE_AA)
             
+        # 2. Face boxes (Bright Gold/Cyan)
+        if face_boxes:
+            for f_item in face_boxes:
+                fx, fy, fw, fh = f_item["box"]
+                f_conf = f_item["conf"]
+                cv2.rectangle(vis_frame, (fx, fy), (fx + fw, fy + fh), (245, 180, 0), 2)
+                f_label = f"Face {int(f_conf * 100)}%"
+                (ftw, fth), _ = cv2.getTextSize(f_label, cv2.FONT_HERSHEY_SIMPLEX, 0.45, 1)
+                cv2.rectangle(vis_frame, (fx, max(0, fy - fth - 6)), (fx + ftw + 6, max(0, fy)), (245, 180, 0), -1)
+                cv2.putText(vis_frame, f_label, (fx + 3, max(fth, fy - 4)), cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 0, 0), 1, cv2.LINE_AA)
+                
         return vis_frame

@@ -21,12 +21,16 @@ class FrameRecord:
     boxes: list
     full_path: str
     thumb_path: str
+    width: int = 0
+    height: int = 0
+    is_full_body_face: bool = False
+    face_boxes: list = None
 
 
 class VideoAnalysisWorker(threading.Thread):
     """
     Background worker thread to extract video frames at full FPS and
-    run person detection without blocking the UI.
+    run person detection and full body & face detection without blocking the UI.
     """
 
     def __init__(
@@ -36,7 +40,7 @@ class VideoAnalysisWorker(threading.Thread):
         output_dir: str,
         step: int = 1,
         conf_threshold: float = 0.35,
-        on_progress: Optional[Callable[[int, int, int, int, float, str, Optional[FrameRecord]], None]] = None,
+        on_progress: Optional[Callable[[int, int, int, int, int, float, str, Optional[FrameRecord]], None]] = None,
         on_complete: Optional[Callable[[List[FrameRecord]], None]] = None,
         on_error: Optional[Callable[[Exception], None]] = None,
     ):
@@ -71,12 +75,12 @@ class VideoAnalysisWorker(threading.Thread):
             total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
             fps = cap.get(cv2.CAP_PROP_FPS) or 25.0
             
-            # Target frames to process based on step
             target_frame_indices = list(range(0, total_frames, self.step))
             total_targets = len(target_frame_indices)
             
             current_frame_idx = 0
             processed_count = 0
+            full_body_face_count = 0
             person_count = 0
             no_person_count = 0
             
@@ -89,13 +93,14 @@ class VideoAnalysisWorker(threading.Thread):
                     break
 
                 if current_frame_idx in next_target_set:
-                    # Save full-res image
+                    h, w = frame.shape[:2]
+
+                    # Save full-res HD image at 100% maximum quality
                     full_filename = f"frame_{current_frame_idx:06d}.jpg"
                     full_filepath = os.path.join(full_dir, full_filename)
-                    cv2.imwrite(full_filepath, frame, [cv2.IMWRITE_JPEG_QUALITY, 95])
+                    cv2.imwrite(full_filepath, frame, [cv2.IMWRITE_JPEG_QUALITY, 100])
 
-                    # Save thumbnail (max width 280)
-                    h, w = frame.shape[:2]
+                    # Save UI thumbnail (max width 280)
                     thumb_w = 280
                     thumb_h = max(1, int(280 * h / w))
                     thumb = cv2.resize(frame, (thumb_w, thumb_h), interpolation=cv2.INTER_AREA)
@@ -103,13 +108,15 @@ class VideoAnalysisWorker(threading.Thread):
                     thumb_filepath = os.path.join(thumb_dir, thumb_filename)
                     cv2.imwrite(thumb_filepath, thumb, [cv2.IMWRITE_JPEG_QUALITY, 85])
 
-                    # Person detection
-                    has_person, max_conf, boxes = self.detector.detect(
+                    # Person & Full-Body/Face Detection
+                    has_person, max_conf, boxes, is_fbf, face_boxes = self.detector.detect(
                         frame, conf_threshold=self.conf_threshold
                     )
 
                     if has_person:
                         person_count += 1
+                        if is_fbf:
+                            full_body_face_count += 1
                     else:
                         no_person_count += 1
 
@@ -129,6 +136,10 @@ class VideoAnalysisWorker(threading.Thread):
                         boxes=boxes,
                         full_path=full_filepath,
                         thumb_path=thumb_filepath,
+                        width=w,
+                        height=h,
+                        is_full_body_face=is_fbf,
+                        face_boxes=face_boxes or [],
                     )
                     self.records.append(record)
                     processed_count += 1
@@ -149,6 +160,7 @@ class VideoAnalysisWorker(threading.Thread):
                         self.on_progress(
                             processed_count,
                             total_targets,
+                            full_body_face_count,
                             person_count,
                             no_person_count,
                             fps_calc,

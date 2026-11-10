@@ -47,14 +47,16 @@ class VideoFrameProApp(ctk.CTk):
         
         # Frame records
         self.all_records: List[FrameRecord] = []
+        self.full_body_face_records: List[FrameRecord] = []
         self.person_records: List[FrameRecord] = []
         self.no_person_records: List[FrameRecord] = []
         
         # Selection state (stores record.index)
         self.selected_indices: Set[int] = set()
+        self.last_clicked_record: Optional[FrameRecord] = None
         
-        # Active tab: "person", "no_person", "all"
-        self.current_tab = "person"
+        # Active tab: "full_body_face", "person", "no_person", "all"
+        self.current_tab = "full_body_face"
         
         # Pagination
         self.current_page = 1
@@ -324,6 +326,28 @@ class VideoFrameProApp(ctk.CTk):
         )
         self.btn_open_folder.pack(side="right")
 
+        # Format selector
+        fmt_frame = ctk.CTkFrame(save_sec, fg_color="transparent")
+        fmt_frame.pack(fill="x", padx=12, pady=(0, 10))
+
+        fmt_lbl = ctk.CTkLabel(
+            fmt_frame,
+            text="Format:",
+            font=ctk.CTkFont(size=11),
+            text_color="#cbd5e1",
+        )
+        fmt_lbl.pack(side="left")
+
+        self.combo_export_fmt = ctk.CTkComboBox(
+            fmt_frame,
+            values=["JPG (High Quality)", "PNG (Lossless)"],
+            width=160,
+            height=26,
+            font=ctk.CTkFont(size=11),
+        )
+        self.combo_export_fmt.set("JPG (High Quality)")
+        self.combo_export_fmt.pack(side="right")
+
         # Bottom download action buttons
         dload_sec = ctk.CTkFrame(sidebar, fg_color="#18181b")
         dload_sec.pack(fill="x", padx=16, pady=12)
@@ -348,7 +372,18 @@ class VideoFrameProApp(ctk.CTk):
             height=30,
             command=self._download_all_current_tab,
         )
-        self.btn_download_all_tab.pack(fill="x")
+        self.btn_download_all_tab.pack(fill="x", pady=(0, 6))
+
+        self.btn_download_zip = ctk.CTkButton(
+            dload_sec,
+            text="📦 Download as ZIP Archive",
+            font=ctk.CTkFont(size=11),
+            fg_color="#0f766e",
+            hover_color="#14b8a6",
+            height=30,
+            command=self._download_as_zip,
+        )
+        self.btn_download_zip.pack(fill="x")
 
     def _on_slider_change(self, value):
         pct = int(value * 100)
@@ -416,25 +451,33 @@ class VideoFrameProApp(ctk.CTk):
         counter_line = ctk.CTkFrame(self.progress_container, fg_color="transparent")
         counter_line.pack(fill="x", padx=16, pady=(2, 8))
 
+        self.lbl_count_fbf = ctk.CTkLabel(
+            counter_line,
+            text="🌟 Full Body & Face: 0",
+            font=ctk.CTkFont(size=11, weight="bold"),
+            text_color="#c084fc",
+        )
+        self.lbl_count_fbf.pack(side="left", padx=(0, 14))
+
         self.lbl_count_person = ctk.CTkLabel(
             counter_line,
-            text="👤 Person Detected: 0",
+            text="👤 All Person: 0",
             font=ctk.CTkFont(size=11, weight="bold"),
             text_color="#10b981",
         )
-        self.lbl_count_person.pack(side="left", padx=(0, 16))
+        self.lbl_count_person.pack(side="left", padx=(0, 14))
 
         self.lbl_count_no_person = ctk.CTkLabel(
             counter_line,
-            text="⚪ Hidden (No Person): 0",
+            text="⚪ Hidden: 0",
             font=ctk.CTkFont(size=11),
             text_color="#94a3b8",
         )
-        self.lbl_count_no_person.pack(side="left", padx=(0, 16))
+        self.lbl_count_no_person.pack(side="left", padx=(0, 14))
 
         self.lbl_count_all = ctk.CTkLabel(
             counter_line,
-            text="🎞️ Total Processed: 0",
+            text="🎞️ Total: 0",
             font=ctk.CTkFont(size=11),
             text_color="#38bdf8",
         )
@@ -451,17 +494,18 @@ class VideoFrameProApp(ctk.CTk):
         self.tab_selector = ctk.CTkSegmentedButton(
             tab_row,
             values=[
-                "👤 Person Detected (0)",
+                "🌟 Full Body & Face (0)",
+                "👤 All Person (0)",
                 "⚪ Hidden / No Person (0)",
                 "🎞️ All Frames (0)",
             ],
             command=self._on_tab_changed,
             font=ctk.CTkFont(size=12, weight="bold"),
             height=34,
-            selected_color="#2563eb",
-            selected_hover_color="#1d4ed8",
+            selected_color="#7c3aed",
+            selected_hover_color="#6d28d9",
         )
-        self.tab_selector.set("👤 Person Detected (0)")
+        self.tab_selector.set("🌟 Full Body & Face (0)")
         self.tab_selector.pack(side="left", fill="x", expand=True)
 
         # Row 2: Selection Tools Toolbar
@@ -670,6 +714,7 @@ class VideoFrameProApp(ctk.CTk):
 
         # Reset state for new run
         self.all_records.clear()
+        self.full_body_face_records.clear()
         self.person_records.clear()
         self.no_person_records.clear()
         self.selected_indices.clear()
@@ -705,6 +750,7 @@ class VideoFrameProApp(ctk.CTk):
         self,
         current: int,
         total: int,
+        full_body_face_count: int,
         person_count: int,
         no_person_count: int,
         fps_calc: float,
@@ -715,7 +761,7 @@ class VideoFrameProApp(ctk.CTk):
         self.after(
             0,
             lambda: self._ui_update_progress(
-                current, total, person_count, no_person_count, fps_calc, eta_str, record
+                current, total, full_body_face_count, person_count, no_person_count, fps_calc, eta_str, record
             ),
         )
 
@@ -723,6 +769,7 @@ class VideoFrameProApp(ctk.CTk):
         self,
         current: int,
         total: int,
+        full_body_face_count: int,
         person_count: int,
         no_person_count: int,
         fps_calc: float,
@@ -738,14 +785,17 @@ class VideoFrameProApp(ctk.CTk):
             text=f"Speed: {fps_calc:.1f} FPS  •  ETA: {eta_str}"
         )
 
-        self.lbl_count_person.configure(text=f"👤 Person Detected: {person_count}")
-        self.lbl_count_no_person.configure(text=f"⚪ Hidden (No Person): {no_person_count}")
-        self.lbl_count_all.configure(text=f"🎞️ Total Processed: {current}")
+        self.lbl_count_fbf.configure(text=f"🌟 Full Body & Face: {full_body_face_count}")
+        self.lbl_count_person.configure(text=f"👤 All Person: {person_count}")
+        self.lbl_count_no_person.configure(text=f"⚪ Hidden: {no_person_count}")
+        self.lbl_count_all.configure(text=f"🎞️ Total: {current}")
 
         if record:
             self.all_records.append(record)
             if record.has_person:
                 self.person_records.append(record)
+                if record.is_full_body_face:
+                    self.full_body_face_records.append(record)
             else:
                 self.no_person_records.append(record)
 
@@ -758,8 +808,10 @@ class VideoFrameProApp(ctk.CTk):
         self.btn_stop.configure(state="disabled")
         self.progress_bar.set(1.0)
 
+        fbf_len = len(self.full_body_face_records)
+        p_len = len(self.person_records)
         self.lbl_status.configure(
-            text=f"Analysis Complete! Found {len(self.person_records)} frames with person(s)."
+            text=f"Analysis Complete! Found {fbf_len} Full Body & Face frames ({p_len} total person frames)."
         )
         self.lbl_stats.configure(text="Finished")
 
@@ -783,29 +835,35 @@ class VideoFrameProApp(ctk.CTk):
     # TABS & GALLERY RENDERING
     # ==========================================
     def _update_tab_labels(self):
+        fbf_len = len(self.full_body_face_records)
         p_len = len(self.person_records)
         np_len = len(self.no_person_records)
         all_len = len(self.all_records)
 
         vals = [
-            f"👤 Person Detected ({p_len})",
+            f"🌟 Full Body & Face ({fbf_len})",
+            f"👤 All Person ({p_len})",
             f"⚪ Hidden / No Person ({np_len})",
             f"🎞️ All Frames ({all_len})",
         ]
         self.tab_selector.configure(values=vals)
 
         # Retain selection
-        if self.current_tab == "person":
+        if self.current_tab == "full_body_face":
             self.tab_selector.set(vals[0])
-        elif self.current_tab == "no_person":
+        elif self.current_tab == "person":
             self.tab_selector.set(vals[1])
-        else:
+        elif self.current_tab == "no_person":
             self.tab_selector.set(vals[2])
+        else:
+            self.tab_selector.set(vals[3])
 
     def _on_tab_changed(self, value: str):
-        if "Person Detected" in value:
+        if "Full Body" in value:
+            self.current_tab = "full_body_face"
+        elif "All Person" in value:
             self.current_tab = "person"
-        elif "Hidden / No Person" in value:
+        elif "Hidden" in value:
             self.current_tab = "no_person"
         else:
             self.current_tab = "all"
@@ -814,7 +872,9 @@ class VideoFrameProApp(ctk.CTk):
         self._render_current_page()
 
     def _get_active_records(self) -> List[FrameRecord]:
-        if self.current_tab == "person":
+        if self.current_tab == "full_body_face":
+            return self.full_body_face_records
+        elif self.current_tab == "person":
             return self.person_records
         elif self.current_tab == "no_person":
             return self.no_person_records
@@ -843,7 +903,9 @@ class VideoFrameProApp(ctk.CTk):
         total_items = len(records)
 
         if total_items == 0:
-            if self.current_tab == "person":
+            if self.current_tab == "full_body_face":
+                msg = "No frames with full body and clear face found."
+            elif self.current_tab == "person":
                 msg = "No frames with person detected yet."
             elif self.current_tab == "no_person":
                 msg = "No hidden frames without person."
@@ -894,11 +956,24 @@ class VideoFrameProApp(ctk.CTk):
             )
             card.grid(row=r, column=c, padx=6, pady=6, sticky="nsew")
 
-    def _toggle_card_select(self, record: FrameRecord, selected: bool):
-        if selected:
-            self.selected_indices.add(record.index)
+    def _toggle_card_select(self, record: FrameRecord, selected: bool, is_shift: bool = False):
+        if is_shift and self.last_clicked_record is not None:
+            records = self._get_active_records()
+            try:
+                i1 = records.index(self.last_clicked_record)
+                i2 = records.index(record)
+                start_i, end_i = min(i1, i2), max(i1, i2)
+                for r in records[start_i:end_i + 1]:
+                    self.selected_indices.add(r.index)
+            except ValueError:
+                self.selected_indices.add(record.index)
+            self._render_current_page()
         else:
-            self.selected_indices.discard(record.index)
+            if selected:
+                self.selected_indices.add(record.index)
+            else:
+                self.selected_indices.discard(record.index)
+        self.last_clicked_record = record
         self._update_selection_count_ui()
 
     def _update_selection_count_ui(self):
@@ -997,11 +1072,19 @@ class VideoFrameProApp(ctk.CTk):
     def _download_single_frame(self, record: FrameRecord):
         try:
             os.makedirs(self.download_dir, exist_ok=True)
+            fmt = self.combo_export_fmt.get() if hasattr(self, "combo_export_fmt") else "JPG"
+            ext = "png" if "PNG" in fmt else "jpg"
             status_tag = "person" if record.has_person else "frame"
-            dest_name = f"frame_{record.index + 1:06d}_{status_tag}.jpg"
+            dest_name = f"frame_{record.index + 1:06d}_{status_tag}.{ext}"
             dest_path = os.path.join(self.download_dir, dest_name)
-            shutil.copy2(record.full_path, dest_path)
-            messagebox.showinfo("Saved", f"Image saved successfully to:\n{dest_path}")
+
+            if ext == "png":
+                img = cv2.imread(record.full_path)
+                cv2.imwrite(dest_path, img, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+            else:
+                shutil.copy2(record.full_path, dest_path)
+
+            messagebox.showinfo("Saved", f"HD Image saved successfully to:\n{dest_path}")
         except Exception as e:
             messagebox.showerror("Error", f"Failed to save image:\n{e}")
 
@@ -1054,24 +1137,77 @@ class VideoFrameProApp(ctk.CTk):
     def _execute_batch_download(self, records: List[FrameRecord], success_msg: str):
         try:
             os.makedirs(self.download_dir, exist_ok=True)
+            fmt = self.combo_export_fmt.get() if hasattr(self, "combo_export_fmt") else "JPG"
+            ext = "png" if "PNG" in fmt else "jpg"
             saved_count = 0
             for rec in records:
                 if os.path.exists(rec.full_path):
                     tag = "person" if rec.has_person else "frame"
-                    fname = f"frame_{rec.index + 1:06d}_{tag}.jpg"
+                    fname = f"frame_{rec.index + 1:06d}_{tag}.{ext}"
                     dest = os.path.join(self.download_dir, fname)
-                    shutil.copy2(rec.full_path, dest)
+                    if ext == "png":
+                        img = cv2.imread(rec.full_path)
+                        cv2.imwrite(dest, img, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+                    else:
+                        shutil.copy2(rec.full_path, dest)
                     saved_count += 1
 
             res = messagebox.askyesno(
                 "Download Complete",
-                f"{success_msg}!\n\nFolder: {self.download_dir}\n\nWould you like to open the folder now?",
+                f"{success_msg} ({saved_count} HD frames)!\n\nFolder: {self.download_dir}\n\nWould you like to open the folder now?",
             )
             if res:
                 self._open_download_dir()
 
         except Exception as e:
             messagebox.showerror("Download Error", f"An error occurred while saving frames:\n{e}")
+
+    def _download_as_zip(self):
+        if self.selected_indices:
+            records_map = {rec.index: rec for rec in self.all_records}
+            to_download = [records_map[i] for i in self.selected_indices if i in records_map]
+            label = f"{len(to_download)} selected frames"
+        else:
+            to_download = self._get_active_records()
+            label = f"all {len(to_download)} frames in current tab"
+
+        if not to_download:
+            messagebox.showwarning("No Frames", "No frames available to export as ZIP.")
+            return
+
+        import zipfile
+        try:
+            os.makedirs(self.download_dir, exist_ok=True)
+            timestamp = time.strftime("%Y%m%d_%H%M%S")
+            stem = self.video_info["filename"] if self.video_info else "frames"
+            stem_clean = os.path.splitext(stem)[0]
+            zip_name = f"{stem_clean}_frames_{timestamp}.zip"
+            zip_path = os.path.join(self.download_dir, zip_name)
+
+            fmt = self.combo_export_fmt.get() if hasattr(self, "combo_export_fmt") else "JPG"
+            ext = "png" if "PNG" in fmt else "jpg"
+
+            with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as zf:
+                for rec in to_download:
+                    if os.path.exists(rec.full_path):
+                        tag = "person" if rec.has_person else "frame"
+                        arcname = f"frame_{rec.index + 1:06d}_{tag}.{ext}"
+                        if ext == "png":
+                            img = cv2.imread(rec.full_path)
+                            _, buf = cv2.imencode(".png", img, [cv2.IMWRITE_PNG_COMPRESSION, 3])
+                            zf.writestr(arcname, buf.tobytes())
+                        else:
+                            zf.write(rec.full_path, arcname=arcname)
+
+            res = messagebox.askyesno(
+                "ZIP Export Complete",
+                f"Successfully exported {label} into:\n\n{zip_path}\n\nWould you like to open the folder now?",
+            )
+            if res:
+                self._open_download_dir()
+
+        except Exception as e:
+            messagebox.showerror("ZIP Export Error", f"Failed to export ZIP:\n{e}")
 
     # ==========================================
     # CLEANUP
